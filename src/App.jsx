@@ -4,6 +4,9 @@ import NavBar from './components/NavBar';
 import Footer from './components/Footer';
 import './App.css';
 
+// 1. Импортируем компонент аналитики (обязательно из /react)
+import { SpeedInsights } from "@vercel/speed-insights/react"
+
 const HomePage = lazy(() => import('./pages/HomePage'));
 const MoviesPage = lazy(() => import('./pages/MoviesPage'));
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
@@ -31,6 +34,8 @@ function App() {
         </main>
 
         <Footer />
+
+        <SpeedInsights />
       </div>
     </Router>
   );
