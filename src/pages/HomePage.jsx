@@ -1,10 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+/**
+ * ГЛАВНАЯ СТРАНИЦА (LANDING)
+ * Использует сложные градиенты, анимации fadeInUp и 
+ * адаптивные секции из index.css
+ */
 const HomePage = () => {
   return (
-    <div className="landing-page">
+    <main className="landing-page">
       
+      {/* ПЕРВЫЙ ЭКРАН (HERO) */}
       <section className="hero-section">
         <div className="hero-overlay"></div>
         <div className="hero-content">
@@ -29,6 +35,7 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* СЕКЦИЯ ПРЕИМУЩЕСТВ (FEATURES) */}
       <section className="features-section">
         <h2 className="section-title">Почему выбирают нас?</h2>
         <div className="features-grid">
@@ -37,19 +44,22 @@ const HomePage = () => {
             <h3>Умный поиск</h3>
             <p>Находите фильмы по названию, жанрам или рейтингу за доли секунды.</p>
           </div>
+          
           <div className="feature-card">
             <div className="feature-icon">❤️</div>
             <h3>Избранное</h3>
             <p>Сохраняйте любимые картины, чтобы не потерять их и посмотреть позже.</p>
           </div>
+          
           <div className="feature-card">
             <div className="feature-icon">🚀</div>
             <h3>Скорость</h3>
-            <p>Мгновенная загрузка данных и плавные анимации для комфорта.</p>
+            <p>Мгновенная загрузка данных и плавные анимации для вашего комфорта.</p>
           </div>
         </div>
       </section>
 
+      {/* СЕКЦИЯ ЖАНРОВ (GENRES PREVIEW) */}
       <section className="genres-preview-section">
         <div className="genres-banner">
           <div className="genres-text">
@@ -57,6 +67,7 @@ const HomePage = () => {
             <p>От леденящих кровь хорроров до добрых семейных комедий.</p>
             <Link to="/movies" className="text-link">Перейти к жанрам &rarr;</Link>
           </div>
+          
           <div className="genres-visuals">
             <div className="genre-pill action">Боевики</div>
             <div className="genre-pill drama">Драмы</div>
@@ -66,7 +77,7 @@ const HomePage = () => {
         </div>
       </section>
 
-    </div>
+    </main>
   );
 };
 
