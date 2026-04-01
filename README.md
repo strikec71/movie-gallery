@@ -1,16 +1,45 @@
-# React + Vite
+# 🎬 Movie Gallery — Твой личный мир кино
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Modern Movie Collection App, созданный на **React 19** с акцентом на высокую производительность, адаптивный дизайн и удобство пользователя. 
 
-Currently, two official plugins are available:
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployed-success?logo=vercel)](ТВОЯ_ССЫЛКА_НА_VERCEL)
+[![React Version](https://img.shields.io/badge/React-19.0-blue?logo=react)](https://react.dev/)
+[![Vite Version](https://img.shields.io/badge/Vite-7.3-yellow?logo=vite)](https://vitejs.dev/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Живое демо
+Посмотреть проект в действии: [**movie-gallery-strikec71.vercel.app**](ТВОЯ_ССЫЛКА_НА_VERCEL)
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ Основные возможности
 
-## Expanding the ESLint configuration
+* **🔍 Умный поиск и фильтрация:** Поиск по названию, фильтрация по жанрам и сортировка по рейтингу/популярности.
+* **💖 Избранное:** Добавление фильмов в личную коллекцию (данные сохраняются в `localStorage`).
+* **🎞️ Просмотр трейлеров:** Интеграция с YouTube API для просмотра официальных трейлеров прямо в модальном окне.
+* **➕ Добавление своих фильмов:** Возможность расширять галерею собственными картинами через валидируемую форму.
+* **📱 Ultra Responsive UI:** Интерфейс идеально адаптирован под любые устройства — от старых смартфонов до 4K мониторов.
+* **🧩 Custom Hooks:** Логика вынесена в переиспользуемые хуки (`useForm`, `useModal`, `useFilter`).
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 🛠 Стек технологий
+
+* **Frontend:** React 19, JSX.
+* **State Management:** React Context API.
+* **Styling:** Modern CSS (Flexbox, Grid, Glassmorphism, Media Queries).
+* **Build Tool:** Vite.
+* **Deployment:** Vercel (CI/CD настроен).
+* **Routing:** React Router v7.
+
+---
+
+## 📂 Структура проекта
+
+```text
+src/
+├── components/     # Переиспользуемые UI компоненты (Card, Navbar, Modal)
+├── context/        # Глобальное состояние приложения (MovieContext)
+├── hooks/          # Кастомные хуки для логики (useModal, useForm)
+├── pages/          # Страницы приложения (Home, Movies, Profile, AddMovie)
+├── tests/          # Модульные и интеграционные тесты
+└── assets/         # Глобальные стили и статика
