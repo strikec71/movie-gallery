@@ -1,9 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { MovieContext } from '../context/MovieContext';
+import { useNavigate } from 'react-router-dom'; // <-- 1. Добавляем навигацию
 
 const Modal = ({ movie, onClose }) => {
   const { getMovieVideo, toggleFavorite, favorites, watched, toggleWatched, customMovies, deleteMovie } = useContext(MovieContext);
   const [trailerKey, setTrailerKey] = useState(null);
+  const navigate = useNavigate(); // <-- 2. Инициализируем навигатор
   
   const isFavorite = favorites?.some(f => f.id === movie?.id);
   const isWatched = watched?.includes(movie?.id);
@@ -30,12 +32,17 @@ const Modal = ({ movie, onClose }) => {
     }
   };
 
+  // 3. Функция для перехода к редактированию
+  const handleEdit = () => {
+    onClose(); // Сначала закрываем модалку
+    navigate(`/add-movie?edit=${movie.id}`); // Переходим на страницу формы с ID
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>&times;</button>
         
-        {/* ВЕРХНЯЯ ЧАСТЬ: ФОН И ПОСТЕР */}
         <div className="modal-header" style={{backgroundImage: `url(${movie.poster})`}}>
           <div className="modal-poster-shadow"></div>
           <img src={movie.poster} alt={movie.title} className="modal-poster-img" />
@@ -53,7 +60,6 @@ const Modal = ({ movie, onClose }) => {
           </div>
         </div>
 
-        {/* ОСНОВНОЙ КОНТЕНТ */}
         <div className="modal-body">
           <div className="modal-stats">
             <div className="stat-item">
@@ -76,7 +82,6 @@ const Modal = ({ movie, onClose }) => {
 
           <p className="modal-description">{movie.description}</p>
           
-          {/* ТРЕЙЛЕР */}
           {trailerKey && (
             <div className="video-container">
               <h3>🎬 Трейлер фильма</h3>
@@ -92,7 +97,6 @@ const Modal = ({ movie, onClose }) => {
             </div>
           )}
 
-          {/* КНОПКИ ДЕЙСТВИЙ */}
           <div className="modal-actions">
             {!isCustomMovie && (
               <a 
@@ -105,6 +109,17 @@ const Modal = ({ movie, onClose }) => {
               </a>
             )}
             
+            {/* --- НОВАЯ КНОПКА РЕДАКТИРОВАНИЯ --- */}
+            {isCustomMovie && (
+              <button 
+                className="modal-btn" 
+                style={{ background: 'var(--gold)', color: '#000', border: 'none' }}
+                onClick={handleEdit}
+              >
+                🖊️ Редактировать
+              </button>
+            )}
+
             <button 
               className={`modal-btn btn-fav ${isFavorite ? 'active' : ''}`} 
               onClick={() => toggleFavorite(movie.id)}

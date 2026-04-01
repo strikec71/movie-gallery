@@ -1,6 +1,6 @@
-import React, { useContext, useCallback } from 'react';
+import React, { useContext, useCallback, useEffect } from 'react';
 import { MovieContext } from '../context/MovieContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom'; // Добавили useSearchParams
 import MovieCard from '../components/MovieCard';
 import { useForm } from '../hooks/useForm';
 
@@ -10,10 +10,16 @@ const AVAILABLE_GENRES = [
 ];
 
 const AddMoviePage = () => {
-  const { addMovie } = useContext(MovieContext);
+  // 1. Достаем updateMovie и список наших фильмов из контекста
+  const { addMovie, updateMovie, customMovies } = useContext(MovieContext);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  // Функция валидации (полная версия без сокращений)
+  // 2. Определяем режим: редактирование или создание
+  const editId = searchParams.get('edit');
+  const isEditMode = !!editId;
+
+  // Функция валидации
   const validateField = useCallback((name, value) => {
     let errorMsg = '';
     switch (name) {
@@ -37,7 +43,7 @@ const AddMoviePage = () => {
     return errorMsg;
   }, []);
 
-  // Наш кастомный хук useForm
+  // Наш хук useForm
   const { values, setValues, errors, touched, setTouched, handleChange, handleBlur } = useForm({
     title: '', 
     rating: '', 
@@ -46,6 +52,23 @@ const AddMoviePage = () => {
     genres: [], 
     isWatched: false
   }, validateField);
+
+  // 3. ЭФФЕКТ ДЛЯ РЕДАКТИРОВАНИЯ: Заполняем форму данными, если мы в режиме правки
+  useEffect(() => {
+    if (isEditMode && customMovies.length > 0) {
+      const movieToEdit = customMovies.find(m => m.id === Number(editId));
+      if (movieToEdit) {
+        setValues({
+          title: movieToEdit.title,
+          rating: movieToEdit.rating.toString(),
+          description: movieToEdit.description,
+          posterUrl: movieToEdit.poster.startsWith('https://via.placeholder.com') ? '' : movieToEdit.poster,
+          genres: movieToEdit.genres,
+          isWatched: false // Можно оставить false или добавить в схему фильма
+        });
+      }
+    }
+  }, [editId, isEditMode, customMovies, setValues]);
 
   const toggleGenre = useCallback((genre) => {
     const newGenres = values.genres.includes(genre)
@@ -59,7 +82,6 @@ const AddMoviePage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Валидация перед отправкой
     const titleError = validateField('title', values.title);
     const ratingError = validateField('rating', values.rating);
     const genresError = validateField('genres', values.genres);
@@ -68,18 +90,29 @@ const AddMoviePage = () => {
 
     if (titleError || ratingError || genresError) return;
 
-    const newMovie = {
-      id: Date.now(),
+    // 4. ФОРМИРУЕМ ОБЪЕКТ ФИЛЬМА
+    const movieData = {
+      id: isEditMode ? Number(editId) : Date.now(), // Если правим — сохраняем старый ID
       title: values.title.trim(),
       rating: parseFloat(values.rating).toFixed(1),
-      popularity: Math.floor(Math.random() * 500) + 100,
-      year: new Date().getFullYear().toString(),
+      popularity: isEditMode 
+        ? (customMovies.find(m => m.id === Number(editId))?.popularity || 100) 
+        : Math.floor(Math.random() * 500) + 100,
+      year: isEditMode 
+        ? (customMovies.find(m => m.id === Number(editId))?.year || new Date().getFullYear().toString())
+        : new Date().getFullYear().toString(),
       genres: values.genres,
       description: values.description.trim(),
       poster: values.posterUrl || `https://via.placeholder.com/500x750/181a20/ff0055?text=${encodeURIComponent(values.title)}`,
     };
 
-    addMovie(newMovie, values.isWatched);
+    // 5. ЛОГИКА СОХРАНЕНИЯ: Обновить или Добавить
+    if (isEditMode) {
+      updateMovie(movieData);
+    } else {
+      addMovie(movieData, values.isWatched);
+    }
+    
     navigate('/movies');
   };
 
@@ -94,7 +127,6 @@ const AddMoviePage = () => {
         overflow: 'hidden'
       }}>
         
-        {/* ЛЕВАЯ ЧАСТЬ: ФОРМА */}
         <div style={{ flex: '1 1 500px', padding: 'clamp(20px, 5vw, 40px)' }}>
           <h2 style={{ 
             marginTop: 0, 
@@ -103,7 +135,7 @@ const AddMoviePage = () => {
             display: 'inline-block', 
             paddingBottom: '10px' 
           }}>
-            Новый фильм
+            {isEditMode ? 'Редактировать фильм' : 'Новый фильм'}
           </h2>
           
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -214,12 +246,11 @@ const AddMoviePage = () => {
               className="btn-primary glow-effect" 
               style={{ border: 'none', cursor: 'pointer', width: '100%' }}
             >
-              Добавить фильм
+              {isEditMode ? 'Сохранить изменения' : 'Добавить фильм'}
             </button>
           </form>
         </div>
 
-        {/* ПРАВАЯ ЧАСТЬ: ПРЕДПРОСМОТР (Скрывается на мобилках через CSS) */}
         <div className="preview-aside" style={{ 
           flex: '1 1 350px', 
           background: 'rgba(0,0,0,0.2)', 

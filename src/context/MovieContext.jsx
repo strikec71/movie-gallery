@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { useFetch } from '../hooks/useFetch';   // <-- Подключаем хук
-import { useFilter } from '../hooks/useFilter'; // <-- Подключаем хук
+import { useFetch } from '../hooks/useFetch';
+import { useFilter } from '../hooks/useFilter';
 
 export const MovieContext = createContext();
 
@@ -21,7 +21,6 @@ export const MovieProvider = ({ children }) => {
   const [sortBy, setSortBy] = useState("rating");
   const [sortOrder, setSortOrder] = useState("desc");
 
-  // ЗАДАЧА 2: Используем кастомный хук для API
   const { loading: isLoading, request } = useFetch(); 
 
   const [customMovies, setCustomMovies] = useState(() => {
@@ -46,7 +45,6 @@ export const MovieProvider = ({ children }) => {
           ? `${BASE_URL}/discover/movie?api_key=${API_KEY}&with_genres=${selectedGenres.map(g => genreIds[g]).join(',')}&language=ru-RU&page=${page}`
           : `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=ru-RU&page=${page}`;
 
-      // Используем метод request из хука useFetch!
       const data = await request(url); 
       setTotalPages(Math.min(data.total_pages, 500));
 
@@ -89,6 +87,13 @@ export const MovieProvider = ({ children }) => {
     if (isWatchedFlag) setWatched(prev => [...prev, newMovie.id]); 
   }, []);
 
+  // --- НОВАЯ ФУНКЦИЯ РЕДАКТИРОВАНИЯ ---
+  const updateMovie = useCallback((updatedMovie) => {
+    setCustomMovies(prev => prev.map(m => m.id === updatedMovie.id ? updatedMovie : m));
+    // Обновляем в избранном, если фильм там есть
+    setFavorites(prev => prev.map(f => f.id === updatedMovie.id ? updatedMovie : f));
+  }, []);
+
   const deleteMovie = useCallback((movieId) => {
     setCustomMovies(prev => prev.filter(m => m.id !== movieId));
     setFavorites(prev => prev.filter(f => f.id !== movieId));
@@ -97,7 +102,6 @@ export const MovieProvider = ({ children }) => {
 
   const combinedMovies = useMemo(() => [...customMovies, ...movies], [customMovies, movies]);
 
-  // ЗАДАЧА 3: ИСПОЛЬЗУЕМ ХУК ФИЛЬТРАЦИИ! (Код сократился в разы)
   const sortedMovies = useFilter(combinedMovies, { searchQuery, selectedGenres, sortBy, sortOrder });
   const sortedFavorites = useFilter(favorites, { searchQuery, selectedGenres, sortBy, sortOrder });
 
@@ -105,8 +109,9 @@ export const MovieProvider = ({ children }) => {
     movies: sortedMovies, favorites: sortedFavorites, watched, customMovies, isLoading,
     page, setPage, totalPages, searchQuery, setSearchQuery, selectedGenres, setSelectedGenres,
     sortBy, setSortBy, sortOrder, setSortOrder, toggleFavorite, toggleWatched, clearFavorites,
-    fetchMovies, getMovieVideo, addMovie, deleteMovie
-  }), [sortedMovies, sortedFavorites, watched, customMovies, isLoading, page, totalPages, searchQuery, selectedGenres, sortBy, sortOrder, toggleFavorite, toggleWatched, clearFavorites, fetchMovies, getMovieVideo, addMovie, deleteMovie]);
+    fetchMovies, getMovieVideo, addMovie, deleteMovie, 
+    updateMovie // <-- Передаем новую функцию
+  }), [sortedMovies, sortedFavorites, watched, customMovies, isLoading, page, totalPages, searchQuery, selectedGenres, sortBy, sortOrder, toggleFavorite, toggleWatched, clearFavorites, fetchMovies, getMovieVideo, addMovie, deleteMovie, updateMovie]);
 
   return <MovieContext.Provider value={value}>{children}</MovieContext.Provider>;
 };
