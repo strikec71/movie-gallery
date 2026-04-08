@@ -63,10 +63,12 @@ export const MovieProvider = ({ children }) => {
 
   useEffect(() => { setPage(1); fetchMovies(); }, [searchQuery, selectedGenres, fetchMovies]);
 
+  // --- ИСПРАВЛЕННАЯ ФУНКЦИЯ ---
   const getMovieVideo = useCallback(async (movieId) => {
     if (customMovies.some(m => m.id === movieId)) return null; 
     try {
-      const data = await request(`${BASE_URL}/movie/${movieId}/videos?api_key=${API_KEY}&language=ru-RU`);
+      // ИЗМЕНЕНИЕ: Добавили &include_video_language=ru,en
+      const data = await request(`${BASE_URL}/movie/${movieId}/videos?api_key=${API_KEY}&language=ru-RU&include_video_language=ru,en`);
       const trailer = data.results?.find(vid => vid.site === "YouTube" && (vid.type === "Trailer" || vid.type === "Teaser"));
       return trailer ? trailer.key : null;
     } catch (error) { return null; }
@@ -87,10 +89,8 @@ export const MovieProvider = ({ children }) => {
     if (isWatchedFlag) setWatched(prev => [...prev, newMovie.id]); 
   }, []);
 
-  // --- НОВАЯ ФУНКЦИЯ РЕДАКТИРОВАНИЯ ---
   const updateMovie = useCallback((updatedMovie) => {
     setCustomMovies(prev => prev.map(m => m.id === updatedMovie.id ? updatedMovie : m));
-    // Обновляем в избранном, если фильм там есть
     setFavorites(prev => prev.map(f => f.id === updatedMovie.id ? updatedMovie : f));
   }, []);
 
@@ -109,8 +109,7 @@ export const MovieProvider = ({ children }) => {
     movies: sortedMovies, favorites: sortedFavorites, watched, customMovies, isLoading,
     page, setPage, totalPages, searchQuery, setSearchQuery, selectedGenres, setSelectedGenres,
     sortBy, setSortBy, sortOrder, setSortOrder, toggleFavorite, toggleWatched, clearFavorites,
-    fetchMovies, getMovieVideo, addMovie, deleteMovie, 
-    updateMovie // <-- Передаем новую функцию
+    fetchMovies, getMovieVideo, addMovie, deleteMovie, updateMovie
   }), [sortedMovies, sortedFavorites, watched, customMovies, isLoading, page, totalPages, searchQuery, selectedGenres, sortBy, sortOrder, toggleFavorite, toggleWatched, clearFavorites, fetchMovies, getMovieVideo, addMovie, deleteMovie, updateMovie]);
 
   return <MovieContext.Provider value={value}>{children}</MovieContext.Provider>;
