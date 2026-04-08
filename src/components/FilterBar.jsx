@@ -1,5 +1,6 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { MovieContext } from '../context/MovieContext';
+import RouletteModal from './RouletteModal'; // <-- Подключаем модалку рулетки
 
 const GENRES = [
   "Action", "Adventure", "Animation", "Comedy", "Crime", 
@@ -15,6 +16,9 @@ const FilterBar = () => {
     sortBy, setSortBy,
     sortOrder, setSortOrder
   } = useContext(MovieContext);
+
+  // Стейт для управления открытием Кино-рулетки
+  const [isRouletteOpen, setIsRouletteOpen] = useState(false);
 
   const toggleGenre = (genre) => {
     if (selectedGenres.includes(genre)) {
@@ -66,7 +70,25 @@ const FilterBar = () => {
         {selectedGenres.length > 0 && (
           <button className="genre-tag clear-genres" onClick={() => setSelectedGenres([])}>✕ Сбросить</button>
         )}
+        
+        {/* КНОПКА КИНО-РУЛЕТКИ */}
+        <button 
+          className="genre-tag" 
+          onClick={() => setIsRouletteOpen(true)}
+          style={{ 
+            background: 'var(--primary)', 
+            color: 'white', 
+            fontWeight: 'bold',
+            borderColor: 'var(--primary)',
+            boxShadow: '0 4px 10px rgba(255, 0, 85, 0.3)'
+          }}
+        >
+          🎲 Случайный фильм
+        </button>
       </div>
+
+      {/* КОМПОНЕНТ РУЛЕТКИ (ВСПЛЫВАЮЩЕЕ ОКНО) */}
+      <RouletteModal isOpen={isRouletteOpen} onClose={() => setIsRouletteOpen(false)} />
     </div>
   );
 };
