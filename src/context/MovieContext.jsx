@@ -38,7 +38,6 @@ export const MovieProvider = ({ children }) => {
   useEffect(() => { localStorage.setItem('react-movie-watched', JSON.stringify(watched)); }, [watched]);
 
   // 1. ИСПРАВЛЕНИЕ ПАГИНАЦИИ (Разделили эффекты)
-  // Сбрасываем страницу на 1-ю ТОЛЬКО при изменении параметров фильтра, а не при клике на пагинацию
   useEffect(() => { 
     setPage(1); 
   }, [searchQuery, selectedGenres, sortBy, sortOrder]);
@@ -46,14 +45,12 @@ export const MovieProvider = ({ children }) => {
   const fetchMovies = useCallback(async () => {
     try {
       // 2. ИСПРАВЛЕНИЕ ГЛОБАЛЬНОЙ СОРТИРОВКИ
-      // Преобразуем наш стейт sortBy в формат, который понимает TMDB
       let tmdbSort = "popularity.desc";
       if (sortBy === "rating") tmdbSort = `vote_average.${sortOrder}`;
       else if (sortBy === "date") tmdbSort = `primary_release_date.${sortOrder}`;
       else if (sortBy === "title") tmdbSort = `original_title.${sortOrder}`;
       else if (sortBy === "popularity") tmdbSort = `popularity.${sortOrder}`;
       
-      // Чтобы TMDB не выдавал на 1 странице фильмы с рейтингом 10/10, у которых всего 1 голос:
       const minVotes = sortBy === "rating" ? "&vote_count.gte=100" : "";
 
       let url = searchQuery 
@@ -61,7 +58,7 @@ export const MovieProvider = ({ children }) => {
         : `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=ru-RU&page=${page}&sort_by=${tmdbSort}${minVotes}${selectedGenres.length > 0 ? `&with_genres=${selectedGenres.map(g => genreIds[g]).join(',')}` : ''}`;
 
       const data = await request(url); 
-      setTotalPages(Math.min(data.total_pages, 500)); // TMDB лимитирует API 500 страницами
+      setTotalPages(Math.min(data.total_pages, 500)); 
 
       const formattedMovies = data.results.map(item => ({
         id: item.id, title: item.title, originalTitle: item.original_title,
@@ -76,17 +73,15 @@ export const MovieProvider = ({ children }) => {
     } catch (error) { console.error("Ошибка API:", error); }
   }, [page, searchQuery, selectedGenres, sortBy, sortOrder, request]);
 
-  // Запрашиваем фильмы, когда меняется функция fetch (то есть при изменении page, фильтров и т.д.)
   useEffect(() => { 
     fetchMovies(); 
   }, [fetchMovies]);
 
-  // --- ИСПРАВЛЕННАЯ ФУНКЦИЯ ---
+  // 3. ТВОЯ ЛОГИКА ТРЕЙЛЕРОВ СОХРАНЕНА (Trailer || Teaser)
   const getMovieVideo = useCallback(async (movieId) => {
     if (customMovies.some(m => m.id === movieId)) return null; 
     try {
-      // ИЗМЕНЕНИЕ: Добавили &include_video_language=ru,en
-      const data = await request(`${BASE_URL}/movie/${movieId}/videos?api_key=${API_KEY}&language=ru-RU&include_video_language=ru,en`);
+      const data = await request(`${BASE_URL}/movie/${movieId}/videos?api_key=${API_KEY}&language=ru-RU`);
       const trailer = data.results?.find(vid => vid.site === "YouTube" && (vid.type === "Trailer" || vid.type === "Teaser"));
       return trailer ? trailer.key : null;
     } catch (error) { return null; }
@@ -120,7 +115,6 @@ export const MovieProvider = ({ children }) => {
 
   const combinedMovies = useMemo(() => [...customMovies, ...movies], [customMovies, movies]);
 
-  // useFilter теперь просто вставляет customMovies в нужные места среди глобально отсортированных 20 фильмов
   const sortedMovies = useFilter(combinedMovies, { searchQuery, selectedGenres, sortBy, sortOrder });
   const sortedFavorites = useFilter(favorites, { searchQuery, selectedGenres, sortBy, sortOrder });
 
