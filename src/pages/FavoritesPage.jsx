@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { MovieContext } from '../context/MovieContext';
-import MovieList from '../components/MovieList';
+import MovieListWrapper from '../components/MovieListWrapper';
+import MovieCard from '../components/MovieCard';
 import FilterBar from '../components/FilterBar';
 import Modal from '../components/Modal';
 import { useModal } from '../hooks/useModal';
@@ -8,9 +9,11 @@ import { useModal } from '../hooks/useModal';
 /**
  * СТРАНИЦА ИЗБРАННОГО
  * Отображает коллекцию пользователя с поддержкой фильтрации и модальных окон.
+ * ИСПОЛЬЗУЕТ ПАТТЕРНЫ: Render Props и Compound Components
  */
 const FavoritesPage = () => {
-  const { favorites, clearFavorites, toggleFavorite } = useContext(MovieContext);
+  // Добавили watched и toggleWatched, так как наша карточка теперь их ждет
+  const { favorites, clearFavorites, toggleFavorite, watched, toggleWatched } = useContext(MovieContext);
   
   // Управление детальным просмотром через наш кастомный хук
   const { isOpen, modalData, open, close } = useModal();
@@ -51,15 +54,47 @@ const FavoritesPage = () => {
       
       {/* КОНТЕНТНАЯ ОБЛАСТЬ */}
       {favorites.length > 0 ? (
-        <MovieList 
+        /* ПАТТЕРН RENDER PROPS */
+        <MovieListWrapper 
           movies={favorites} 
-          favorites={favorites.map(f => f.id)} 
-          onToggleFavorite={toggleFavorite} 
-          onMovieClick={open} 
+          render={(movie) => {
+            const isWatched = watched?.includes(movie.id);
+
+            return (
+              /* ПАТТЕРН COMPOUND COMPONENTS */
+              <MovieCard key={movie.id} movie={movie} isWatched={isWatched} onClick={() => open(movie)}>
+                <MovieCard.Poster>
+                  {/* Кнопка избранного (в этой вкладке она всегда активна, нажатие удаляет) */}
+                  <button 
+                    className="favorite-action-btn active"
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      toggleFavorite(movie.id); 
+                    }}
+                    title="Удалить из избранного"
+                  >
+                    ❤️
+                  </button>
+                  
+                  <button 
+                    className={`watch-action-btn ${isWatched ? 'watched' : ''}`}
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      if (toggleWatched) toggleWatched(movie.id); 
+                    }}
+                  >
+                    {isWatched ? 'Отменить' : '👀 Смотреть'}
+                  </button>
+                </MovieCard.Poster>
+                
+                <MovieCard.Info />
+              </MovieCard>
+            );
+          }} 
         />
       ) : (
         /* КРАСИВОЕ ПУСТОЕ СОСТОЯНИЕ */
-        <div className="no-results" style={{ padding: '100px 20px' }}>
+        <div className="no-results" style={{ padding: '100px 20px', textAlign: 'center' }}>
           <div style={{ fontSize: '5rem', marginBottom: '20px', filter: 'grayscale(1)' }}>💔</div>
           <h3>Ваш список пуст</h3>
           <p style={{ color: 'var(--text-muted)', maxWidth: '400px', margin: '10px auto' }}>

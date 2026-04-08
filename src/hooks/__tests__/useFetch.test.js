@@ -34,7 +34,6 @@ describe('Тестирование хука useFetch', () => {
       try {
         await result.current.request('https://api.test.com/error');
       } catch (e) {
-        // Ошибка перехвачена
       }
     });
 
