@@ -20,6 +20,7 @@ describe('Тестирование компонента AddMoviePage', () => {
   it('Должен показывать ошибку валидации при коротком названии', () => {
     renderWithProviders(<AddMoviePage />);
     
+    //Comment
     // Находим инпут по placeholder (убедись, что в твоем компоненте есть такой placeholder)
     // Если плейсхолдер другой, замени текст здесь
     const titleInputs = screen.getAllByRole('textbox');
