@@ -37,16 +37,31 @@ export const MovieProvider = ({ children }) => {
   useEffect(() => { localStorage.setItem('react-movie-favorites', JSON.stringify(favorites)); }, [favorites]);
   useEffect(() => { localStorage.setItem('react-movie-watched', JSON.stringify(watched)); }, [watched]);
 
+  // 1. ИСПРАВЛЕНИЕ ПАГИНАЦИИ (Разделили эффекты)
+  // Сбрасываем страницу на 1-ю ТОЛЬКО при изменении параметров фильтра, а не при клике на пагинацию
+  useEffect(() => { 
+    setPage(1); 
+  }, [searchQuery, selectedGenres, sortBy, sortOrder]);
+
   const fetchMovies = useCallback(async () => {
     try {
+      // 2. ИСПРАВЛЕНИЕ ГЛОБАЛЬНОЙ СОРТИРОВКИ
+      // Преобразуем наш стейт sortBy в формат, который понимает TMDB
+      let tmdbSort = "popularity.desc";
+      if (sortBy === "rating") tmdbSort = `vote_average.${sortOrder}`;
+      else if (sortBy === "date") tmdbSort = `primary_release_date.${sortOrder}`;
+      else if (sortBy === "title") tmdbSort = `original_title.${sortOrder}`;
+      else if (sortBy === "popularity") tmdbSort = `popularity.${sortOrder}`;
+      
+      // Чтобы TMDB не выдавал на 1 странице фильмы с рейтингом 10/10, у которых всего 1 голос:
+      const minVotes = sortBy === "rating" ? "&vote_count.gte=100" : "";
+
       let url = searchQuery 
         ? `${BASE_URL}/search/movie?api_key=${API_KEY}&query=${searchQuery}&language=ru-RU&page=${page}`
-        : selectedGenres.length > 0 
-          ? `${BASE_URL}/discover/movie?api_key=${API_KEY}&with_genres=${selectedGenres.map(g => genreIds[g]).join(',')}&language=ru-RU&page=${page}`
-          : `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=ru-RU&page=${page}`;
+        : `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=ru-RU&page=${page}&sort_by=${tmdbSort}${minVotes}${selectedGenres.length > 0 ? `&with_genres=${selectedGenres.map(g => genreIds[g]).join(',')}` : ''}`;
 
       const data = await request(url); 
-      setTotalPages(Math.min(data.total_pages, 500));
+      setTotalPages(Math.min(data.total_pages, 500)); // TMDB лимитирует API 500 страницами
 
       const formattedMovies = data.results.map(item => ({
         id: item.id, title: item.title, originalTitle: item.original_title,
@@ -59,9 +74,12 @@ export const MovieProvider = ({ children }) => {
       }));
       setMovies(formattedMovies);
     } catch (error) { console.error("Ошибка API:", error); }
-  }, [page, searchQuery, selectedGenres, request]);
+  }, [page, searchQuery, selectedGenres, sortBy, sortOrder, request]);
 
-  useEffect(() => { setPage(1); fetchMovies(); }, [searchQuery, selectedGenres, fetchMovies]);
+  // Запрашиваем фильмы, когда меняется функция fetch (то есть при изменении page, фильтров и т.д.)
+  useEffect(() => { 
+    fetchMovies(); 
+  }, [fetchMovies]);
 
   const getMovieVideo = useCallback(async (movieId) => {
     if (customMovies.some(m => m.id === movieId)) return null; 
@@ -87,10 +105,8 @@ export const MovieProvider = ({ children }) => {
     if (isWatchedFlag) setWatched(prev => [...prev, newMovie.id]); 
   }, []);
 
-  // --- НОВАЯ ФУНКЦИЯ РЕДАКТИРОВАНИЯ ---
   const updateMovie = useCallback((updatedMovie) => {
     setCustomMovies(prev => prev.map(m => m.id === updatedMovie.id ? updatedMovie : m));
-    // Обновляем в избранном, если фильм там есть
     setFavorites(prev => prev.map(f => f.id === updatedMovie.id ? updatedMovie : f));
   }, []);
 
@@ -102,6 +118,7 @@ export const MovieProvider = ({ children }) => {
 
   const combinedMovies = useMemo(() => [...customMovies, ...movies], [customMovies, movies]);
 
+  // useFilter теперь просто вставляет customMovies в нужные места среди глобально отсортированных 20 фильмов
   const sortedMovies = useFilter(combinedMovies, { searchQuery, selectedGenres, sortBy, sortOrder });
   const sortedFavorites = useFilter(favorites, { searchQuery, selectedGenres, sortBy, sortOrder });
 
@@ -109,8 +126,7 @@ export const MovieProvider = ({ children }) => {
     movies: sortedMovies, favorites: sortedFavorites, watched, customMovies, isLoading,
     page, setPage, totalPages, searchQuery, setSearchQuery, selectedGenres, setSelectedGenres,
     sortBy, setSortBy, sortOrder, setSortOrder, toggleFavorite, toggleWatched, clearFavorites,
-    fetchMovies, getMovieVideo, addMovie, deleteMovie, 
-    updateMovie // <-- Передаем новую функцию
+    fetchMovies, getMovieVideo, addMovie, deleteMovie, updateMovie
   }), [sortedMovies, sortedFavorites, watched, customMovies, isLoading, page, totalPages, searchQuery, selectedGenres, sortBy, sortOrder, toggleFavorite, toggleWatched, clearFavorites, fetchMovies, getMovieVideo, addMovie, deleteMovie, updateMovie]);
 
   return <MovieContext.Provider value={value}>{children}</MovieContext.Provider>;
