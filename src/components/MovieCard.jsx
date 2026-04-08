@@ -1,143 +1,107 @@
-import React, { useContext, useCallback } from 'react';
-import { MovieContext } from '../context/MovieContext';
-import MovieListWrapper from '../components/MovieListWrapper';
-import MovieCard from '../components/MovieCard';
-import FilterBar from '../components/FilterBar';
-import Modal from '../components/Modal';
-import { useModal } from '../hooks/useModal';
+import React, { memo } from 'react';
 
-const MoviesPage = () => {
-  const { 
-    movies, 
-    isLoading, 
-    page, 
-    setPage, 
-    totalPages, 
-    favorites, 
-    toggleFavorite,
-    watched,
-    toggleWatched
-  } = useContext(MovieContext);
-  
-  const { isOpen, modalData, open, close } = useModal(); 
+/**
+ * КАРТОЧКА ФИЛЬМА (MEMOIZED)
+ * Оптимизирована для предотвращения лишних рендеров в больших списках.
+ * Поддерживает статусы "Избранное" и "Просмотрено".
+ */
+const MovieCard = memo(({ 
+  movie, 
+  isFavorite, 
+  isWatched, 
+  onToggleFavorite, 
+  onToggleWatched, 
+  onClick 
+}) => {
+  if (!movie) return null;
 
-  const renderPagination = useCallback(() => {
-    const pages = [];
-    let startPage = Math.max(1, page - 2);
-    let endPage = Math.min(totalPages, startPage + 4);
-    
-    if (endPage - startPage < 4) {
-      startPage = Math.max(1, endPage - 4);
-    }
+  // Обработчик для кнопки избранного
+  const handleFavoriteClick = (e) => {
+    e.stopPropagation();
+    if (onToggleFavorite) onToggleFavorite(movie.id);
+  };
 
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
-        <button
-          key={i}
-          className={`page-btn ${i === page ? 'active' : ''}`}
-          onClick={() => {
-            setPage(i);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-        >
-          {i}
-        </button>
-      );
-    }
-    return pages;
-  }, [page, totalPages, setPage]);
+  // Обработчик для кнопки просмотра
+  const handleWatchedClick = (e) => {
+    e.stopPropagation();
+    if (onToggleWatched) onToggleWatched(movie.id);
+  };
 
   return (
-    <div className="page-container" style={{ animation: 'fadeInUp 0.8s var(--ease-spring)' }}>
-      <FilterBar />
-
-      {isLoading ? (
-        <div className="movies-grid">
-          {[...Array(8)].map((_, i) => (
-             <div key={i} className="movie-card skeleton-card" style={{ height: '380px' }}>
-               <div className="skeleton-poster" style={{ height: '75%', background: 'var(--glass-bg)' }}></div>
-               <div className="skeleton-text" style={{ width: '70%', margin: '15px', background: 'var(--glass-bg)' }}></div>
-               <div className="skeleton-text" style={{ width: '40%', margin: '0 15px', background: 'var(--glass-bg)' }}></div>
-             </div>
-          ))}
-        </div>
-      ) : movies.length > 0 ? (
-        
-        <MovieListWrapper 
-          movies={movies} 
-          render={(movie) => {
-            const isFavorite = favorites?.some(f => f.id === movie.id);
-            const isWatched = watched?.includes(movie.id);
-
-            return (
-              /* СБОРКА КАРТОЧКИ: Сохранили твой дизайн кнопок внутри Poster */
-              <MovieCard key={movie.id} movie={movie} isWatched={isWatched} onClick={() => open(movie)}>
-                <MovieCard.Poster>
-                  
-                  <button 
-                    className={`favorite-action-btn ${isFavorite ? 'active' : ''}`}
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      toggleFavorite(movie.id); 
-                    }}
-                    title={isFavorite ? "Удалить из избранного" : "В избранное"}
-                  >
-                    {isFavorite ? '❤️' : '🤍'}
-                  </button>
-                  
-                  <button 
-                    className={`watch-action-btn ${isWatched ? 'watched' : ''}`}
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      toggleWatched(movie.id); 
-                    }}
-                  >
-                    {isWatched ? 'Отменить' : '👀 Смотреть'}
-                  </button>
-
-                </MovieCard.Poster>
-                
-                <MovieCard.Info />
-              </MovieCard>
-            );
-          }} 
+    <div 
+      className={`movie-card ${isWatched ? 'watched-mode' : ''}`} 
+      onClick={() => onClick && onClick(movie)}
+      style={{ opacity: isWatched ? 0.6 : 1 }}
+    >
+      {/* ПЕРЕДНЯЯ ПАНЕЛЬ: ПОСТЕР И БЕЙДЖИ */}
+      <div className="movie-poster">
+        <img 
+          src={movie.poster} 
+          alt={movie.title} 
+          loading="lazy" 
         />
-
-      ) : (
-        <div className="no-results">
-          <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🕵️‍♂️</div>
-          <h3>Ничего не нашли...</h3>
-          <p style={{ color: 'var(--text-muted)' }}>Попробуйте изменить поисковый запрос или фильтры.</p>
-        </div>
-      )}
-
-      {!isLoading && movies.length > 0 && totalPages > 1 && (
-        <div className="pagination-container">
+        
+        {/* Статус просмотренного (Бейдж) */}
+        {isWatched && (
+          <div className="status-badge-watched">
+            ✔️ Просмотрено
+          </div>
+        )}
+        
+        {/* Рейтинг и Популярность */}
+        <span className={`movie-rating ${isWatched ? 'shifted' : ''}`}>
+          ⭐ {Number(movie.rating).toFixed(1)}
+        </span>
+        
+        <span className="movie-popularity">
+          🔥 {movie.popularity}
+        </span>
+        
+        {/* НИЖНЯЯ ПАНЕЛЬ ДЕЙСТВИЙ (Появляется при наведении или всегда на мобилках) */}
+        <div className="card-actions-overlay">
+          
           <button 
-            className="page-btn" 
-            disabled={page === 1}
-            onClick={() => setPage(p => Math.max(1, p - 1))}
+            className={`favorite-action-btn ${isFavorite ? 'active' : ''}`}
+            onClick={handleFavoriteClick}
+            title={isFavorite ? "Удалить из избранного" : "В избранное"}
           >
-            &larr;
+            {isFavorite ? '❤️' : '🤍'}
           </button>
           
-          {renderPagination()}
-          
           <button 
-            className="page-btn" 
-            disabled={page === totalPages}
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            className={`watch-action-btn ${isWatched ? 'watched' : ''}`}
+            onClick={handleWatchedClick}
           >
-            &rarr;
+            {isWatched ? 'Отменить' : '👀 Смотреть'}
           </button>
+          
         </div>
-      )}
+      </div>
       
-      {isOpen && (
-        <Modal movie={modalData} onClose={close} />
-      )}
+      {/* ИНФОРМАЦИОННАЯ ПАНЕЛЬ */}
+      <div className="movie-info">
+        <h3>{movie.title}</h3>
+        <div className="movie-genres-container">
+          {movie.genres?.slice(0, 3).map((genre, index) => (
+            <span 
+              key={`${movie.id}-${index}`} 
+              className="movie-genre"
+            >
+              {genre}
+            </span>
+          ))}
+          {movie.genres?.length > 3 && (
+            <span className="movie-genre-more">
+              +{movie.genres.length - 3}
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
-};
+});
 
-export default MoviesPage;
+// Стили для новых классов, которые нужно добавить в index.css (секция карточек)
+// Мы их уже частично прописали в прошлом шаге, но здесь они закреплены за JSX.
+
+export default MovieCard;

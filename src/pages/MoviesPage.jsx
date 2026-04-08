@@ -54,14 +54,15 @@ const MoviesPage = () => {
       {isLoading ? (
         <div className="movies-grid">
           {[...Array(8)].map((_, i) => (
-             <div key={i} className="movie-card skeleton-card" style={{ height: '350px' }}>
-               <div className="skeleton-poster" style={{ height: '70%', background: 'var(--glass-bg)' }}></div>
+             <div key={i} className="movie-card skeleton-card" style={{ height: '380px' }}>
+               <div className="skeleton-poster" style={{ height: '75%', background: 'var(--glass-bg)' }}></div>
                <div className="skeleton-text" style={{ width: '70%', margin: '15px', background: 'var(--glass-bg)' }}></div>
                <div className="skeleton-text" style={{ width: '40%', margin: '0 15px', background: 'var(--glass-bg)' }}></div>
              </div>
           ))}
         </div>
       ) : movies.length > 0 ? (
+        
         /* ИСПОЛЬЗУЕМ ПАТТЕРН RENDER PROPS */
         <MovieListWrapper 
           movies={movies} 
@@ -70,41 +71,40 @@ const MoviesPage = () => {
             const isWatched = watched?.includes(movie.id);
 
             return (
-              /* ИСПОЛЬЗУЕМ ПАТТЕРН COMPOUND COMPONENTS */
-              <MovieCard movie={movie} onClick={() => open(movie)}>
-                <MovieCard.Header />
-                <MovieCard.Body />
-                <MovieCard.Footer>
+              /* СБОРКА КАРТОЧКИ: Используем правильные составные компоненты (Poster и Info) */
+              <MovieCard key={movie.id} movie={movie} isWatched={isWatched} onClick={() => open(movie)}>
+                <MovieCard.Poster>
                   
+                  {/* Кнопки передаем внутрь постера, как children, чтобы они появились в оверлее */}
                   <button 
-                    className={`action-btn ${isFavorite ? 'active-fav' : ''}`}
+                    className={`favorite-action-btn ${isFavorite ? 'active' : ''}`}
                     onClick={(e) => { 
                       e.stopPropagation(); 
                       toggleFavorite(movie.id); 
                     }}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
-                    title="В избранное"
+                    title={isFavorite ? "Удалить из избранного" : "В избранное"}
                   >
                     {isFavorite ? '❤️' : '🤍'}
                   </button>
-
+                  
                   <button 
-                    className={`action-btn ${isWatched ? 'active-watch' : ''}`}
+                    className={`watch-action-btn ${isWatched ? 'watched' : ''}`}
                     onClick={(e) => { 
                       e.stopPropagation(); 
                       toggleWatched(movie.id); 
                     }}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
-                    title="Просмотрено"
                   >
-                    {isWatched ? '👀' : '👁️‍🗨️'}
+                    {isWatched ? 'Отменить' : '👀 Смотреть'}
                   </button>
 
-                </MovieCard.Footer>
+                </MovieCard.Poster>
+                
+                <MovieCard.Info />
               </MovieCard>
             );
           }} 
         />
+
       ) : (
         <div className="no-results">
           <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🕵️‍♂️</div>
