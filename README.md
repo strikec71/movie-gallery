@@ -1,56 +1,68 @@
-🎬 React Movie Gallery — Advanced SPA
-Современное Single Page Application (SPA) для поиска и коллекционирования фильмов, созданное на React 19 и Vite. Проект демонстрирует применение продвинутых паттернов проектирования, работу с глобальным состоянием, тестирование и глубокое внимание к UX.
+# 🎬 React Movie Gallery
 
-🚀 Живое демо
-Посмотреть проект в действии: movie-gallery-rose.vercel.app
+Современное Single Page Application (SPA) для поиска и коллекционирования фильмов. Проект создан на **React 19** и **Vite**, демонстрирует применение продвинутых паттернов проектирования, работу с глобальным состоянием, тестирование и глубокое внимание к UX.
 
-✨ Ключевые возможности (Features)
-🎨 Умные темы оформления (Theme Switcher): 8 уникальных цветовых палитр (Светлая, Тёмная, Кинотеатр, Киберпанк, Матрица и др.) с плавными переходами и сохранением выбора в localStorage.
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployed-success?logo=vercel)](https://movie-gallery-rose.vercel.app)
+[![React Version](https://img.shields.io/badge/React-19.0-blue?logo=react)](https://react.dev/)
+[![Vite Version](https://img.shields.io/badge/Vite-7.3-yellow?logo=vite)](https://vitejs.dev/)
+[![PWA Ready](https://img.shields.io/badge/PWA-Ready-purple?logo=pwa)](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps)
 
-🌍 Мультиязычность (i18n): Перевод интерфейса "на лету" (RU/EN) с использованием Context API.
+## 🚀 Живое демо
+[**movie-gallery-rose.vercel.app**](https://movie-gallery-rose.vercel.app)
 
-🎰 Кино-рулетка (Movie Roulette): Анимированный интерактивный компонент для случайного выбора фильма с возможностью быстрого добавления в Избранное.
+---
 
-📱 PWA (Progressive Web App): Приложение можно установить на экран смартфона или компьютера как нативное.
+## ✨ Ключевые возможности
 
-👁️‍🗨️ Списки пользователя: Поддержка списков «Избранное» и «Просмотрено» с мгновенным обновлением UI и синхронизацией.
+* **🎨 Темы оформления (Theme Switcher):** 8 уникальных цветовых палитр (Светлая, Тёмная, Кинотеатр, Киберпанк, Матрица и др.) с плавными переходами и сохранением в `localStorage`.
+* **🌍 Мультиязычность (i18n):** Мгновенный перевод интерфейса (RU/EN) через Context API.
+* **🎰 Кино-рулетка:** Анимированный интерактивный компонент для случайного выбора фильма с быстрым добавлением в списки.
+* **📱 PWA (Progressive Web App):** Возможность установки приложения на смартфон или ПК.
+* **👁️‍🗨️ Коллекции:** Поддержка списков «Избранное» и «Просмотрено» с синхронизацией состояния.
+* **🔍 Продвинутая фильтрация:** Поиск, сортировка (по рейтингу, дате, популярности) и фильтрация по жанрам.
+* **🔒 Защита маршрутов:** Имитация авторизации через паттерн **HOC** (`withAuth`).
 
-🔍 Глубокая фильтрация: Поиск, сортировка (по рейтингу, дате, популярности) и фильтрация по жанрам.
+---
 
-🔒 Защита маршрутов: Реализована имитация авторизации через паттерн HOC (withAuth).
+## 🏗 Архитектура и паттерны
 
-🏗 Архитектура и паттерны проектирования
-В проекте сделан упор на масштабируемость и чистоту кода. Применены следующие подходы:
+* **Compound Components:** Компонент `MovieCard` разбит на подкомпоненты (`<MovieCard.Poster>`, `<MovieCard.Info>`) для гибкости и решения проблемы Props Drilling.
+* **Higher-Order Components (HOC):** Изоляция логики доступа к маршрутам.
+* **Render Props & Wrappers:** Использование `MovieListWrapper` для инкапсуляции состояний загрузки, ошибок и пустых списков.
+* **Custom Hooks:** * `useFetch` — универсальная работа с API.
+  * `useForm` — валидация форм.
+  * `useModal` — управление состояниями окон.
+  * `useFilter` — изоляция сортировки и поиска.
+* **Context API:** Разделение глобального состояния на логические блоки (`MovieContext`, `ThemeContext`, `LanguageContext`).
+* **Code Splitting:** Ленивая загрузка страниц через `React.lazy()` и `<Suspense>` для ускорения начальной загрузки (First Contentful Paint).
 
-Compound Components (Составные компоненты): Компонент MovieCard разбит на подкомпоненты (<MovieCard.Poster>, <MovieCard.Info>), что решает проблему Props Drilling и повышает переиспользуемость.
+---
 
-Higher-Order Components (HOC): Компонент withAuth используется для защиты приватных роутов (например, добавление фильма).
+## 🧪 Тестирование
 
-Render Props & Wrapper Components: Использование MovieListWrapper для инкапсуляции логики отрисовки списков, пустых состояний и ошибок.
+Проект покрыт Unit и Integration тестами:
+* Тестирование кастомных хуков (`useFetch`, `useForm`).
+* Интеграционное тестирование страниц (`MoviesIntegration`).
+* Изолированное тестирование HOC и Context.
 
-Custom Hooks (Пользовательские хуки):
+---
 
-useFetch — универсальный хук для работы с API (статусы загрузки, ошибки).
+## 🛠 Стек технологий
 
-useForm — переиспользуемая логика валидации форм.
+* **Фреймворк:** React 19, React Router v7
+* **Сборщик:** Vite
+* **Стилизация:** Modern CSS (CSS Variables, Flexbox/Grid, Animations, Backdrop Filter)
+* **Архитектура:** Context API, Custom Hooks, Portals
+* **Оптимизация:** Code Splitting, PWA manifest
+* **Деплой:** Vercel (CI/CD, Speed Insights)
 
-useModal — управление состояниями модальных окон.
+---
 
-useFilter — изоляция логики сортировки и поиска.
+## 💻 Локальный запуск
 
-Context API: Глобальное состояние разделено на логические блоки (MovieContext, ThemeContext, LanguageContext), чтобы избежать лишних ререндеров.
-
-Code Splitting (Ленивая загрузка): Страницы подгружаются через React.lazy() и <Suspense>, что значительно ускоряет начальную загрузку (First Contentful Paint).
-
-🧪 Тестирование
-Проект покрыт автотестами (Unit и Integration) для обеспечения надежности бизнес-логики и компонентов:
-
-Тестирование кастомных хуков (useFetch.test.js, useForm.test.js).
-
-Интеграционное тестирование сложных страниц (MoviesIntegration.test.jsx).
-
-Тестирование изоляции HOC и Context.
-
+1. Клонируйте репозиторий:
+```bash
+git clone [https://github.com/strikec71/movie-gallery.git](https://github.com/strikec71/movie-gallery.git)
 🛠 Стек технологий
 Core: React 19, JSX, React Router DOM v7
 
@@ -79,7 +91,7 @@ src/
 Клонируйте репозиторий:
 
 Bash
-git clone https://github.com/ВАШ_НИК/ИМЯ_РЕПОЗИТОРИЯ.git
+git clone https://github.com/strikec71/movie-gallery.git
 Перейдите в папку проекта:
 
 Bash
