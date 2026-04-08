@@ -52,18 +52,18 @@ const MoviesPage = () => {
       <FilterBar />
 
       {isLoading ? (
-        <div className="movies-grid">
+        /* ВЕРНУЛИ ТВОИ ОРИГИНАЛЬНЫЕ СКЕЛЕТОНЫ БЕЗ ЛИШНИХ СТИЛЕЙ */
+        <div className="movie-list">
           {[...Array(8)].map((_, i) => (
-             <div key={i} className="movie-card skeleton-card" style={{ height: '380px' }}>
-               <div className="skeleton-poster" style={{ height: '75%', background: 'var(--glass-bg)' }}></div>
-               <div className="skeleton-text" style={{ width: '70%', margin: '15px', background: 'var(--glass-bg)' }}></div>
-               <div className="skeleton-text" style={{ width: '40%', margin: '0 15px', background: 'var(--glass-bg)' }}></div>
+             <div key={i} className="movie-card skeleton-card">
+               <div className="skeleton-poster"></div>
+               <div className="skeleton-text" style={{ width: '70%' }}></div>
+               <div className="skeleton-text" style={{ width: '40%' }}></div>
              </div>
           ))}
         </div>
       ) : movies.length > 0 ? (
         
-        /* ИСПОЛЬЗУЕМ ПАТТЕРН RENDER PROPS */
         <MovieListWrapper 
           movies={movies} 
           render={(movie) => {
@@ -71,11 +71,9 @@ const MoviesPage = () => {
             const isWatched = watched?.includes(movie.id);
 
             return (
-              /* СБОРКА КАРТОЧКИ: Используем правильные составные компоненты (Poster и Info) */
               <MovieCard key={movie.id} movie={movie} isWatched={isWatched} onClick={() => open(movie)}>
                 <MovieCard.Poster>
                   
-                  {/* Кнопки передаем внутрь постера, как children, чтобы они появились в оверлее */}
                   <button 
                     className={`favorite-action-btn ${isFavorite ? 'active' : ''}`}
                     onClick={(e) => { 
