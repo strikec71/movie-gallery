@@ -1,10 +1,12 @@
-import React, { useContext, useCallback } from 'react';
+import React, { useContext, useCallback, Suspense, lazy } from 'react'; // Добавили Suspense и lazy
 import { MovieContext } from '../context/MovieContext';
 import MovieListWrapper from '../components/MovieListWrapper';
 import MovieCard from '../components/MovieCard';
 import FilterBar from '../components/FilterBar';
-import Modal from '../components/Modal';
 import { useModal } from '../hooks/useModal';
+
+// 1. УБРАЛИ обычный импорт Modal и заменили на ленивый:
+const Modal = lazy(() => import('../components/Modal'));
 
 const MoviesPage = () => {
   const { 
@@ -52,7 +54,6 @@ const MoviesPage = () => {
       <FilterBar />
 
       {isLoading ? (
-        /* ВЕРНУЛИ ТВОИ ОРИГИНАЛЬНЫЕ СКЕЛЕТОНЫ БЕЗ ЛИШНИХ СТИЛЕЙ */
         <div className="movie-list">
           {[...Array(8)].map((_, i) => (
              <div key={i} className="movie-card skeleton-card">
@@ -133,8 +134,15 @@ const MoviesPage = () => {
         </div>
       )}
       
+      {/* 2. Обернули ленивую модалку в Suspense с fallback-интерфейсом */}
       {isOpen && (
-        <Modal movie={modalData} onClose={close} />
+        <Suspense fallback={
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1000, background: 'rgba(0,0,0,0.8)', color: 'white', padding: '20px', borderRadius: '10px' }}>
+            Загрузка данных фильма... ⏳
+          </div>
+        }>
+          <Modal movie={modalData} onClose={close} />
+        </Suspense>
       )}
     </div>
   );
