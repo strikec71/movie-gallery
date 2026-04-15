@@ -1,8 +1,12 @@
 import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useFetch } from '../hooks/useFetch';
 import { useFilter } from '../hooks/useFilter';
+import { mockMoviesApi } from '../api/mockMoviesApi';
+import { useNotification } from './NotificationContext';
 
 export const MovieContext = createContext();
+export const MovieDataContext = createContext();
+export const MovieFilterContext = createContext();
 
 const API_KEY = 'ded1b945602b2d2c94a4461084556610';
 const BASE_URL = 'https://api.themoviedb.org/3';
@@ -12,6 +16,8 @@ const genreMap = { 28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
 const genreIds = { "Action": 28, "Adventure": 12, "Animation": 16, "Comedy": 35, "Crime": 80, "Documentary": 99, "Drama": 18, "Family": 10751, "Fantasy": 14, "History": 36, "Horror": 27, "Music": 10402, "Mystery": 9648, "Romance": 10749, "Sci-Fi": 878, "Thriller": 53, "War": 10752, "Western": 37 };
 
 export const MovieProvider = ({ children }) => {
+  const { notify } = useNotification();
+
   // Remote catalog state (TMDB).
   const [movies, setMovies] = useState([]);
   const [page, setPage] = useState(1);
@@ -22,12 +28,11 @@ export const MovieProvider = ({ children }) => {
   const [sortBy, setSortBy] = useState("rating");
   const [sortOrder, setSortOrder] = useState("desc");
 
-  const { loading: isLoading, request } = useFetch(); 
+  const { loading: isLoading, request } = useFetch();
+  const { loading: isMutating, execute } = useFetch();
 
   // Local user collections persisted in localStorage.
-  const [customMovies, setCustomMovies] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('react-movie-custom')) || []; } catch { return []; }
-  });
+  const [customMovies, setCustomMovies] = useState([]);
   const [favorites, setFavorites] = useState(() => {
     try { return JSON.parse(localStorage.getItem('react-movie-favorites')) || []; } catch { return []; }
   });
@@ -35,9 +40,22 @@ export const MovieProvider = ({ children }) => {
     try { return JSON.parse(localStorage.getItem('react-movie-watched')) || []; } catch { return []; }
   });
 
-  useEffect(() => { localStorage.setItem('react-movie-custom', JSON.stringify(customMovies)); }, [customMovies]);
   useEffect(() => { localStorage.setItem('react-movie-favorites', JSON.stringify(favorites)); }, [favorites]);
   useEffect(() => { localStorage.setItem('react-movie-watched', JSON.stringify(watched)); }, [watched]);
+
+  useEffect(() => {
+    let isActive = true;
+    execute(() => mockMoviesApi.getAll())
+      .then((items) => {
+        if (isActive) setCustomMovies(items);
+      })
+      .catch(() => {
+        notify({ type: 'error', message: 'Failed to load local collection.' });
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [execute, notify]);
 
   // Reset pagination when any filter/sort parameter changes.
   useEffect(() => { 
@@ -74,7 +92,10 @@ export const MovieProvider = ({ children }) => {
         description: item.overview || "Описание отсутствует.",
       }));
       setMovies(formattedMovies);
-    } catch (error) { console.error("Ошибка API:", error); }
+    } catch (error) {
+      console.error("Ошибка API:", error);
+      notify({ type: 'error', message: 'Failed to load movies from API.' });
+    }
   }, [page, searchQuery, selectedGenres, sortBy, sortOrder, request]);
 
   useEffect(() => { 
@@ -102,21 +123,27 @@ export const MovieProvider = ({ children }) => {
 
   const clearFavorites = useCallback(() => setFavorites([]), []);
 
-  const addMovie = useCallback((newMovie, isWatchedFlag) => {
-    setCustomMovies(prev => [newMovie, ...prev]);
-    if (isWatchedFlag) setWatched(prev => [...prev, newMovie.id]); 
-  }, []);
+  const addMovie = useCallback(async (newMovie, isWatchedFlag) => {
+    const createdMovie = await execute(() => mockMoviesApi.create(newMovie));
+    setCustomMovies(prev => [createdMovie, ...prev]);
+    if (isWatchedFlag) setWatched(prev => [...prev, createdMovie.id]);
+    notify({ type: 'success', message: 'Movie added to your collection.' });
+  }, [execute, notify]);
 
-  const updateMovie = useCallback((updatedMovie) => {
-    setCustomMovies(prev => prev.map(m => m.id === updatedMovie.id ? updatedMovie : m));
-    setFavorites(prev => prev.map(f => f.id === updatedMovie.id ? updatedMovie : f));
-  }, []);
+  const updateMovie = useCallback(async (updatedMovie) => {
+    const savedMovie = await execute(() => mockMoviesApi.update(updatedMovie));
+    setCustomMovies(prev => prev.map(m => m.id === savedMovie.id ? savedMovie : m));
+    setFavorites(prev => prev.map(f => f.id === savedMovie.id ? savedMovie : f));
+    notify({ type: 'success', message: 'Movie changes saved.' });
+  }, [execute, notify]);
 
-  const deleteMovie = useCallback((movieId) => {
+  const deleteMovie = useCallback(async (movieId) => {
+    await execute(() => mockMoviesApi.remove(movieId));
     setCustomMovies(prev => prev.filter(m => m.id !== movieId));
     setFavorites(prev => prev.filter(f => f.id !== movieId));
     setWatched(prev => prev.filter(id => id !== movieId));
-  }, []);
+    notify({ type: 'info', message: 'Movie removed from your collection.' });
+  }, [execute, notify]);
 
   // Merge local movies on top of remote movies, then apply shared filtering.
   const combinedMovies = useMemo(() => [...customMovies, ...movies], [customMovies, movies]);
@@ -124,12 +151,50 @@ export const MovieProvider = ({ children }) => {
   const sortedMovies = useFilter(combinedMovies, { searchQuery, selectedGenres, sortBy, sortOrder });
   const sortedFavorites = useFilter(favorites, { searchQuery, selectedGenres, sortBy, sortOrder });
 
+  const dataValue = useMemo(() => ({
+    movies: sortedMovies,
+    favorites: sortedFavorites,
+    watched,
+    customMovies,
+    isLoading: isLoading || isMutating,
+    toggleFavorite,
+    toggleWatched,
+    clearFavorites,
+    fetchMovies,
+    getMovieVideo,
+    addMovie,
+    deleteMovie,
+    updateMovie
+  }), [sortedMovies, sortedFavorites, watched, customMovies, isLoading, isMutating, toggleFavorite, toggleWatched, clearFavorites, fetchMovies, getMovieVideo, addMovie, deleteMovie, updateMovie]);
+
+  const filterValue = useMemo(() => ({
+    page,
+    setPage,
+    totalPages,
+    searchQuery,
+    setSearchQuery,
+    selectedGenres,
+    setSelectedGenres,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
+  }), [page, totalPages, searchQuery, selectedGenres, sortBy, sortOrder]);
+
   const value = useMemo(() => ({
-    movies: sortedMovies, favorites: sortedFavorites, watched, customMovies, isLoading,
+    movies: sortedMovies, favorites: sortedFavorites, watched, customMovies, isLoading: isLoading || isMutating,
     page, setPage, totalPages, searchQuery, setSearchQuery, selectedGenres, setSelectedGenres,
     sortBy, setSortBy, sortOrder, setSortOrder, toggleFavorite, toggleWatched, clearFavorites,
     fetchMovies, getMovieVideo, addMovie, deleteMovie, updateMovie
-  }), [sortedMovies, sortedFavorites, watched, customMovies, isLoading, page, totalPages, searchQuery, selectedGenres, sortBy, sortOrder, toggleFavorite, toggleWatched, clearFavorites, fetchMovies, getMovieVideo, addMovie, deleteMovie, updateMovie]);
+  }), [sortedMovies, sortedFavorites, watched, customMovies, isLoading, isMutating, page, totalPages, searchQuery, selectedGenres, sortBy, sortOrder, toggleFavorite, toggleWatched, clearFavorites, fetchMovies, getMovieVideo, addMovie, deleteMovie, updateMovie]);
 
-  return <MovieContext.Provider value={value}>{children}</MovieContext.Provider>;
+  return (
+    <MovieDataContext.Provider value={dataValue}>
+      <MovieFilterContext.Provider value={filterValue}>
+        <MovieContext.Provider value={{ ...dataValue, ...filterValue }}>
+          {children}
+        </MovieContext.Provider>
+      </MovieFilterContext.Provider>
+    </MovieDataContext.Provider>
+  );
 };

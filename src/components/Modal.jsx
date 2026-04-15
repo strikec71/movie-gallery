@@ -27,9 +27,9 @@ const Modal = ({ movie, onClose }) => {
   if (!movie) return null;
 
   // Confirm destructive action before removing user-created movies.
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (window.confirm("Удалить этот фильм из вашей коллекции?")) {
-      deleteMovie(movie.id);
+      await deleteMovie(movie.id);
       onClose();
     }
   };

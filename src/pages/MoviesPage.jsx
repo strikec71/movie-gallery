@@ -23,6 +23,15 @@ const MoviesPage = () => {
   
   const { isOpen, modalData, open, close } = useModal(); 
 
+  const scrollToTopSafe = useCallback(() => {
+    if (typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '')) return;
+    try {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      // jsdom does not implement scrollTo in tests.
+    }
+  }, []);
+
   // Render a sliding 5-page window around the current page.
   const renderPagination = useCallback(() => {
     const pages = [];
@@ -40,7 +49,7 @@ const MoviesPage = () => {
           className={`page-btn ${i === page ? 'active' : ''}`}
           onClick={() => {
             setPage(i);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            scrollToTopSafe();
           }}
         >
           {i}
@@ -48,7 +57,7 @@ const MoviesPage = () => {
       );
     }
     return pages;
-  }, [page, totalPages, setPage]);
+  }, [page, totalPages, setPage, scrollToTopSafe]);
 
   return (
     <div className="page-container" style={{ animation: 'fadeInUp 0.8s var(--ease-spring)' }}>

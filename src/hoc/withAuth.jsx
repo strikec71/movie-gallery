@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 const withAuth = (WrappedComponent) => {
   return (props) => {
-    const [isAuthenticated] = useState(true); 
+    const [isAuthenticated] = useState(() => localStorage.getItem('movie-gallery-auth') !== 'false');
 
     if (!isAuthenticated) {
       return (

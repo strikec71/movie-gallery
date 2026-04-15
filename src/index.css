@@ -905,3 +905,43 @@ header {
   .add-favorite-btn { opacity: 1 !important; transform: translate(-50%, 0) !important; bottom: 10px; background: var(--bg-dark); }
   .movie-card:hover { transform: none; box-shadow: none; }
 }
+
+.notification-stack {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 3000;
+  pointer-events: none;
+}
+
+.notification-toast {
+  min-width: 260px;
+  max-width: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(24, 26, 32, 0.95);
+  color: var(--text-main);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+.notification-toast.success { border-color: rgba(34, 197, 94, 0.6); }
+.notification-toast.error { border-color: rgba(239, 68, 68, 0.65); }
+.notification-toast.info { border-color: rgba(59, 130, 246, 0.65); }
+
+.notification-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}

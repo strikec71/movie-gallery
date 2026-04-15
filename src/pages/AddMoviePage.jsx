@@ -81,7 +81,7 @@ const AddMoviePage = () => {
     setTouched(prev => ({ ...prev, genres: true }));
   }, [values.genres, setValues, setTouched]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validate all required fields before creating/updating the movie.
@@ -112,13 +112,16 @@ const AddMoviePage = () => {
     };
 
     // Keep one submit flow for both create and edit modes.
-    if (isEditMode) {
-      updateMovie(movieData);
-    } else {
-      addMovie(movieData, values.isWatched);
+    try {
+      if (isEditMode) {
+        await updateMovie(movieData);
+      } else {
+        await addMovie(movieData, values.isWatched);
+      }
+      navigate('/movies');
+    } catch (error) {
+      console.error('Save failed:', error);
     }
-    
-    navigate('/movies');
   };
 
   return (

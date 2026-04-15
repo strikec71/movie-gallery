@@ -20,5 +20,19 @@ export const useFetch = () => {
     }
   }, []);
 
-  return { loading, error, request };
+  const execute = useCallback(async (requestFn) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await requestFn();
+      setLoading(false);
+      return data;
+    } catch (e) {
+      setError(e.message);
+      setLoading(false);
+      throw e;
+    }
+  }, []);
+
+  return { loading, error, request, execute };
 };
