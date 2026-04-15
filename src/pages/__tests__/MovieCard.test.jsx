@@ -14,7 +14,6 @@ const mockMovie = {
 describe('Тестирование паттерна Compound Components: MovieCard', () => {
   
   test('Должен корректно собирать карточку из дочерних компонентов', () => {
-    // Рендерим как есть, без фейковых кнопок внутри
     render(
       <MovieCard movie={mockMovie}>
         <MovieCard.Poster />
@@ -22,10 +21,8 @@ describe('Тестирование паттерна Compound Components: MovieCa
       </MovieCard>
     );
 
-    // Проверяем название
     expect(screen.getByText('Матрица')).toBeInTheDocument();
     
-    // Проверяем реальную кнопку, которую генерирует твой код
     expect(screen.getByTitle('В избранное')).toBeInTheDocument();
   });
 

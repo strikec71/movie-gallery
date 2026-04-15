@@ -3,7 +3,7 @@ import { MovieContext } from '../context/MovieContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import MovieCard from '../components/MovieCard';
 import { useForm } from '../hooks/useForm';
-import withAuth from '../hoc/withAuth'; // <-- Подключаем наш HOC
+import withAuth from '../hoc/withAuth';
 
 const AVAILABLE_GENRES = [
   "Action", "Comedy", "Drama", "Horror", "Sci-Fi", 
@@ -18,11 +18,11 @@ const AddMoviePage = () => {
   const editId = searchParams.get('edit');
   const isEditMode = !!editId;
 
-  // 1. НЕКОНТРОЛИРУЕМЫЕ ПОЛЯ (Паттерн Hybrid Form через refs)
+  // Uncontrolled refs are used for fields that do not need live validation.
   const posterUrlRef = useRef(null);
   const descriptionRef = useRef(null);
 
-  // 2. КОНТРОЛИРУЕМЫЕ ПОЛЯ (через useForm)
+  // Validation is shared with useForm so rules stay in one place.
   const validateField = useCallback((name, value) => {
     let errorMsg = '';
     switch (name) {
@@ -50,12 +50,11 @@ const AddMoviePage = () => {
     isWatched: false
   }, validateField);
 
-  // ЭФФЕКТ ДЛЯ РЕДАКТИРОВАНИЯ (Синхронизация стейта и DOM-рефов)
+  // When editing, hydrate both controlled form values and uncontrolled refs.
   useEffect(() => {
     if (isEditMode && customMovies.length > 0) {
       const movieToEdit = customMovies.find(m => m.id === Number(editId));
       if (movieToEdit) {
-        // Синхронизируем контролируемые
         setValues({
           title: movieToEdit.title,
           rating: movieToEdit.rating.toString(),
@@ -63,7 +62,6 @@ const AddMoviePage = () => {
           isWatched: false
         });
 
-        // Синхронизируем неконтролируемые напрямую в DOM
         if (posterUrlRef.current) {
           posterUrlRef.current.value = movieToEdit.poster.startsWith('http') ? movieToEdit.poster : '';
         }
@@ -86,6 +84,7 @@ const AddMoviePage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // Validate all required fields before creating/updating the movie.
     const titleError = validateField('title', values.title);
     const ratingError = validateField('rating', values.rating);
     const genresError = validateField('genres', values.genres);
@@ -93,7 +92,7 @@ const AddMoviePage = () => {
     setTouched({ title: true, rating: true, genres: true });
     if (titleError || ratingError || genresError) return;
 
-    // Считываем значения из Refs
+    // Read uncontrolled values directly from refs at submit time.
     const posterValue = posterUrlRef.current?.value || '';
     const descriptionValue = descriptionRef.current?.value || '';
 
@@ -108,10 +107,11 @@ const AddMoviePage = () => {
         ? (customMovies.find(m => m.id === Number(editId))?.year || new Date().getFullYear().toString())
         : new Date().getFullYear().toString(),
       genres: values.genres,
-      description: descriptionValue.trim(), // Берем из Ref
-      poster: posterValue || `https://via.placeholder.com/500x750/181a20/ff0055?text=${encodeURIComponent(values.title)}`, // Берем из Ref
+      description: descriptionValue.trim(),
+      poster: posterValue || `https://via.placeholder.com/500x750/181a20/ff0055?text=${encodeURIComponent(values.title)}`,
     };
 
+    // Keep one submit flow for both create and edit modes.
     if (isEditMode) {
       updateMovie(movieData);
     } else {
@@ -139,7 +139,6 @@ const AddMoviePage = () => {
           
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
-            {/* КОНТРОЛИРУЕМОЕ ПОЛЕ (State) */}
             <div className="input-group">
               <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontWeight: '600' }}>Название фильма *</label>
               <input 
@@ -151,7 +150,6 @@ const AddMoviePage = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-              {/* КОНТРОЛИРУЕМОЕ ПОЛЕ (State) */}
               <div style={{ flex: '1 1 120px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Рейтинг *</label>
                 <input 
@@ -161,18 +159,16 @@ const AddMoviePage = () => {
                 />
               </div>
 
-              {/* НЕКОНТРОЛИРУЕМОЕ ПОЛЕ (Ref) */}
               <div style={{ flex: '2 1 200px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>URL Постера</label>
                 <input 
-                  type="text" name="posterUrl" ref={posterUrlRef} // Используем Ref вместо value/onChange
+                  type="text" name="posterUrl" ref={posterUrlRef}
                   className="search-input"
                   style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', borderRadius: '12px' }} 
                 />
               </div>
             </div>
 
-            {/* КОНТРОЛИРУЕМОЕ ПОЛЕ (State) */}
             <div>
               <label style={{ display: 'block', marginBottom: '12px', color: 'var(--text-muted)' }}>Жанры *</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -196,11 +192,10 @@ const AddMoviePage = () => {
               </div>
             </div>
 
-            {/* НЕКОНТРОЛИРУЕМОЕ ПОЛЕ (Ref) */}
             <div>
               <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Описание</label>
               <textarea 
-                name="description" ref={descriptionRef} // Используем Ref
+                name="description" ref={descriptionRef}
                 className="search-input"
                 style={{ minHeight: '100px', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', padding: '12px' }} 
               />
@@ -216,14 +211,13 @@ const AddMoviePage = () => {
           <h3 style={{ color: 'var(--text-muted)', marginBottom: '30px' }}>Предпросмотр</h3>
           <div style={{ width: '280px', pointerEvents: 'none' }}>
             
-            {/* ИСПОЛЬЗУЕМ COMPOUND COMPONENTS ДЛЯ ПРЕДПРОСМОТРА */}
+            {/* Preview mirrors current form state without persisting anything. */}
             <MovieCard 
               movie={{
                 title: values.title || 'Название фильма',
                 rating: values.rating || '0.0',
                 popularity: 'NEW',
                 genres: values.genres.length > 0 ? values.genres : ['Жанр'],
-                // Постер не обновляется в реальном времени, так как поле неконтролируемое
                 poster: `https://via.placeholder.com/500x750/181a20/8b9bb4?text=Постер`,
               }}
               isWatched={false}
@@ -240,5 +234,4 @@ const AddMoviePage = () => {
   );
 };
 
-// ЭКСПОРТ С ПРИМЕНЕНИЕМ HOC АВТОРИЗАЦИИ
 export default withAuth(AddMoviePage);

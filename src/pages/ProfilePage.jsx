@@ -1,12 +1,7 @@
 import React, { useContext } from 'react';
 import { MovieContext } from '../context/MovieContext';
 
-/**
- * СТРАНИЦА ПРОФИЛЯ
- * Отображает статистику пользователя и его статус в системе.
- */
 const ProfilePage = () => {
-  // Достаем не только избранное, но и просмотренные (раз уж мы их сделали!)
   const { favorites, watched } = useContext(MovieContext);
 
   return (
@@ -15,7 +10,7 @@ const ProfilePage = () => {
         
         <div className="profile-card" style={{
           background: 'var(--bg-card)',
-          padding: 'clamp(20px, 8vw, 60px)', // Адаптивные отступы
+          padding: 'clamp(20px, 8vw, 60px)',
           borderRadius: '30px',
           border: '1px solid var(--glass-border)',
           textAlign: 'center',
@@ -23,14 +18,12 @@ const ProfilePage = () => {
           position: 'relative',
           overflow: 'hidden'
         }}>
-          {/* Декоративный эффект на фоне */}
           <div style={{
             position: 'absolute', top: '-50px', right: '-50px',
             width: '200px', height: '200px', background: 'var(--primary)',
             filter: 'blur(100px)', opacity: '0.15', pointerEvents: 'none'
           }}></div>
 
-          {/* АВАТАР */}
           <div className="profile-avatar" style={{
             width: '140px', height: '140px', margin: '0 auto 25px',
             borderRadius: '50%', background: 'linear-gradient(135deg, #ff0055, #ff4081)',
@@ -46,7 +39,6 @@ const ProfilePage = () => {
             alisher_pro_dev@example.com
           </p>
 
-          {/* СЕТКА СТАТИСТИКИ */}
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
@@ -54,7 +46,6 @@ const ProfilePage = () => {
             marginTop: '20px'
           }}>
             
-            {/* Карточка: Избранное */}
             <div style={{ 
               background: 'rgba(255,255,255,0.03)', 
               padding: '20px', 
@@ -70,7 +61,6 @@ const ProfilePage = () => {
               </div>
             </div>
             
-            {/* Карточка: Просмотрено */}
             <div style={{ 
               background: 'rgba(255,255,255,0.03)', 
               padding: '20px', 
@@ -85,7 +75,6 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            {/* Карточка: Статус */}
             <div style={{ 
               background: 'rgba(255,255,255,0.03)', 
               padding: '20px', 

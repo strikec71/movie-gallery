@@ -12,7 +12,6 @@ describe('Тестирование хука useForm', () => {
     const { result } = renderHook(() => useForm({ title: '' }));
     
     act(() => {
-      // Имитируем ввод текста
       result.current.handleChange({ target: { name: 'title', value: 'Интерстеллар', type: 'text' } });
     });
 

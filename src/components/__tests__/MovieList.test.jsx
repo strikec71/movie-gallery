@@ -23,7 +23,6 @@ describe('Тестирование компонента MovieList', () => {
       </MovieContext.Provider>
     );
 
-    // Проверяем, появились ли названия фильмов на экране
     expect(screen.getByText('Матрица')).toBeInTheDocument();
     expect(screen.getByText('Аватар')).toBeInTheDocument();
   });

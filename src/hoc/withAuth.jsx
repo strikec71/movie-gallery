@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 
-/**
- * HOC (Higher Order Component) для защиты страниц.
- * Оборачивает любой компонент и проверяет права доступа.
- */
 const withAuth = (WrappedComponent) => {
   return (props) => {
-    // В реальном проекте мы бы брали это из Context или LocalStorage.
-    // Для сдачи лабы просто используем локальный стейт (поменяй на false, чтобы увидеть эффект ограничения).
     const [isAuthenticated] = useState(true); 
 
     if (!isAuthenticated) {
@@ -29,7 +23,6 @@ const withAuth = (WrappedComponent) => {
       );
     }
 
-    // Если авторизован — рендерим саму страницу и прокидываем все пропсы
     return <WrappedComponent {...props} />;
   };
 };

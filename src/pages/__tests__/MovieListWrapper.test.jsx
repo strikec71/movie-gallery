@@ -17,7 +17,6 @@ describe('Тестирование паттерна Render Props: MovieListWrapp
     render(<MovieListWrapper movies={mockMovies} render={renderMock} />);
 
     expect(renderMock).toHaveBeenCalledTimes(2);
-    // Исправили: теперь проверяем только первый аргумент (сам фильм)
     expect(renderMock).toHaveBeenCalledWith(mockMovies[0]);
     expect(renderMock).toHaveBeenCalledWith(mockMovies[1]);
 

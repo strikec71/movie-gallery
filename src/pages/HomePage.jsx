@@ -1,16 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-/**
- * ГЛАВНАЯ СТРАНИЦА (LANDING)
- * Использует сложные градиенты, анимации fadeInUp и 
- * адаптивные секции из index.css
- */
 const HomePage = () => {
   return (
     <main className="landing-page">
       
-      {/* ПЕРВЫЙ ЭКРАН (HERO) */}
       <section className="hero-section">
         <div className="hero-overlay"></div>
         <div className="hero-content">
@@ -35,7 +29,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* СЕКЦИЯ ПРЕИМУЩЕСТВ (FEATURES) */}
       <section className="features-section">
         <h2 className="section-title">Почему выбирают нас?</h2>
         <div className="features-grid">
@@ -59,7 +52,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* СЕКЦИЯ ЖАНРОВ (GENRES PREVIEW) */}
       <section className="genres-preview-section">
         <div className="genres-banner">
           <div className="genres-text">

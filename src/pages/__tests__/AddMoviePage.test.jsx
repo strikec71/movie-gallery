@@ -20,17 +20,12 @@ describe('Тестирование компонента AddMoviePage', () => {
   it('Должен показывать ошибку валидации при коротком названии', () => {
     renderWithProviders(<AddMoviePage />);
     
-    //Comment
-    // Находим инпут по placeholder (убедись, что в твоем компоненте есть такой placeholder)
-    // Если плейсхолдер другой, замени текст здесь
     const titleInputs = screen.getAllByRole('textbox');
-    const titleInput = titleInputs[0]; // Первое текстовое поле обычно title
+    const titleInput = titleInputs[0];
     
-    // Вводим 1 символ и убираем фокус (onBlur)
     fireEvent.change(titleInput, { target: { name: 'title', value: 'А' } });
     fireEvent.blur(titleInput);
     
-    // Должна появиться ошибка
     expect(screen.getByText('Минимум 3 символа')).toBeInTheDocument();
   });
 });

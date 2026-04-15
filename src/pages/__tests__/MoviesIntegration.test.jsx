@@ -24,7 +24,7 @@ const renderWithContext = (component) => {
         movies: mockMovies,
         isLoading: false,
         page: 1,
-        totalPages: 2, // Установили 2 страницы, чтобы появилась кнопка пагинации
+        totalPages: 2,
         setPage: mockSetPage,
         favorites: [],
         toggleFavorite: mockToggleFavorite,
@@ -65,13 +65,10 @@ describe('Интеграционное тестирование: Страниц�
   test('2. Взаимодействие: Пагинация (переключение страниц)', () => {
     renderWithContext(<MoviesPage />);
 
-    // Так как мы передали totalPages: 2, на странице должна быть кнопка с цифрой "2"
     const page2Button = screen.getByText('2');
     
-    // Кликаем по ней
     fireEvent.click(page2Button);
 
-    // Проверяем, что функция setPage была вызвана для перехода на 2-ю страницу
     expect(mockSetPage).toHaveBeenCalledWith(2);
     expect(mockSetPage).toHaveBeenCalledTimes(1);
   });

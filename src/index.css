@@ -1,11 +1,10 @@
-/* --- 1. ГЛОБАЛЬНЫЕ НАСТРОЙКИ --- */
 :root {
   --primary: #ff0055;
   --bg-dark: #0f1014;
   --bg-card: #181a20;
   --text-main: #ffffff;
   --text-muted: #8b9bb4;
-  --text-on-primary: #ffffff; /* Текст на главном цвете */
+  --text-on-primary: #ffffff;
   --gold: #ffc107;
   --glass: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
@@ -15,9 +14,7 @@
   --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* --- ТЕМЫ ОФОРМЛЕНИЯ (8 ШТУК) --- */
 
-/* 1. Светлая тема (Light) */
 [data-theme='light'] {
   --primary: #ff0055;
   --bg-dark: #f0f2f5;
@@ -30,7 +27,6 @@
   background-image: none;
 }
 
-/* 2. Кинотеатр (Cinema) - Бордовый и золото */
 [data-theme='cinema'] {
   --primary: #ffb703;
   --bg-dark: #140005;
@@ -43,7 +39,6 @@
   background-image: radial-gradient(circle at 50% 0%, #3a0012 0%, var(--bg-dark) 70%);
 }
 
-/* 3. Киберпанк (Cyberpunk) - Неон, фиолетовый и желтый */
 [data-theme='cyberpunk'] {
   --primary: #fce205;
   --bg-dark: #090014;
@@ -56,7 +51,6 @@
   background-image: linear-gradient(135deg, #090014 0%, #1c002e 100%);
 }
 
-/* 4. Матрица (Matrix) - Черный и зеленый хакерский */
 [data-theme='matrix'] {
   --primary: #00ff41;
   --bg-dark: #000000;
@@ -69,7 +63,6 @@
   background-image: none;
 }
 
-/* 5. Океан (Ocean) - Глубокий синий и бирюзовый */
 [data-theme='ocean'] {
   --primary: #00b4d8;
   --bg-dark: #001219;
@@ -82,7 +75,6 @@
   background-image: radial-gradient(circle at 50% 100%, #005f73 0%, var(--bg-dark) 80%);
 }
 
-/* 6. Закат (Sunset) - Фиолетово-оранжевый */
 [data-theme='sunset'] {
   --primary: #fca311;
   --bg-dark: #2b1029;
@@ -95,7 +87,6 @@
   background-image: linear-gradient(to bottom, #2b1029, #4a192c);
 }
 
-/* 7. Дракула (Dracula) - Классическая тема для IDE */
 [data-theme='dracula'] {
   --primary: #ff79c6;
   --bg-dark: #282a36;
@@ -126,11 +117,9 @@ body {
   font-family: var(--font-main);
   min-height: 100vh;
   overflow-y: scroll; 
-  /* Плавный переход для всех цветов темы */
   transition: background-color 0.5s ease, color 0.5s ease, background-image 0.5s ease;
 }
 
-/* Плавность для элементов интерфейса при смене темы */
 .movie-card, .navbar, .modal-content, p, h1, h2, h3, span, div, button, input, select, .feature-card, .genres-banner {
   transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
 }
@@ -145,7 +134,6 @@ header {
   display: none; 
 }
 
-/* --- 2. АНИМАЦИИ --- */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(30px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -166,7 +154,6 @@ header {
   to { transform: translateY(0); opacity: 1; } 
 }
 
-/* --- 3. НАВИГАЦИЯ (NAVBAR) --- */
 .navbar {
   display: flex;
   justify-content: space-between;
@@ -220,7 +207,6 @@ header {
   font-weight: bold;
 }
 
-/* --- 4. ПАНЕЛЬ ФИЛЬТРОВ --- */
 .filter-bar {
   position: sticky; 
   top: 20px; 
@@ -372,7 +358,6 @@ header {
   font-weight: 700; 
 }
 
-/* --- 5. СПИСОК ФИЛЬМОВ И КАРТОЧКИ --- */
 .movie-list { 
   display: grid; 
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
@@ -535,7 +520,6 @@ header {
   font-size: 0.75rem; 
 }
 
-/* --- 6. МОДАЛЬНОЕ ОКНО (FULL VERSION) --- */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -614,7 +598,6 @@ header {
 
 .modal-body { padding: 0 40px 40px; }
 
-/* Сетка статистики */
 .modal-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -630,7 +613,6 @@ header {
 .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 .stat-value { font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
 
-/* Кнопки действий */
 .modal-actions {
   display: flex;
   gap: 12px;
@@ -664,7 +646,6 @@ header {
 
 .modal-btn:hover { transform: translateY(-4px); filter: brightness(1.2); }
 
-/* --- 7. ПАГИНАЦИЯ И СКЕЛЕТОНЫ --- */
 .pagination-container { 
   display: flex; 
   justify-content: center; 
@@ -701,7 +682,6 @@ header {
   animation: shimmer 1.5s infinite linear; 
 }
 
-/* --- 9. LANDING PAGE (ПОЛНАЯ ВЕРСИЯ) --- */
 .landing-page { 
   display: flex; 
   flex-direction: column; 
@@ -843,7 +823,6 @@ header {
 }
 
 .genre-pill:hover { transform: rotate(0) scale(1.1); }
-/* Эти жанровые теги оставляем яркими, это акценты! */
 .genre-pill.action { background: #ff5722; color: white; }
 .genre-pill.drama { background: #9c27b0; color: white; }
 .genre-pill.comedy { background: #ffc107; color: black; }
@@ -885,7 +864,6 @@ header {
   transform: scale(1.05); 
 }
 
-/* --- 10. АДАПТИВНОСТЬ (ПОЛНЫЙ КОНТРОЛЬ) --- */
 @media (max-width: 1024px) {
   .movie-list { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
   .hero-title { font-size: 3rem; }

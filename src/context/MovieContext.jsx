@@ -12,6 +12,7 @@ const genreMap = { 28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
 const genreIds = { "Action": 28, "Adventure": 12, "Animation": 16, "Comedy": 35, "Crime": 80, "Documentary": 99, "Drama": 18, "Family": 10751, "Fantasy": 14, "History": 36, "Horror": 27, "Music": 10402, "Mystery": 9648, "Romance": 10749, "Sci-Fi": 878, "Thriller": 53, "War": 10752, "Western": 37 };
 
 export const MovieProvider = ({ children }) => {
+  // Remote catalog state (TMDB).
   const [movies, setMovies] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -23,6 +24,7 @@ export const MovieProvider = ({ children }) => {
 
   const { loading: isLoading, request } = useFetch(); 
 
+  // Local user collections persisted in localStorage.
   const [customMovies, setCustomMovies] = useState(() => {
     try { return JSON.parse(localStorage.getItem('react-movie-custom')) || []; } catch { return []; }
   });
@@ -37,14 +39,14 @@ export const MovieProvider = ({ children }) => {
   useEffect(() => { localStorage.setItem('react-movie-favorites', JSON.stringify(favorites)); }, [favorites]);
   useEffect(() => { localStorage.setItem('react-movie-watched', JSON.stringify(watched)); }, [watched]);
 
-  // 1. ИСПРАВЛЕНИЕ ПАГИНАЦИИ (Разделили эффекты)
+  // Reset pagination when any filter/sort parameter changes.
   useEffect(() => { 
     setPage(1); 
   }, [searchQuery, selectedGenres, sortBy, sortOrder]);
 
   const fetchMovies = useCallback(async () => {
     try {
-      // 2. ИСПРАВЛЕНИЕ ГЛОБАЛЬНОЙ СОРТИРОВКИ
+      // Map UI sort keys to TMDB API sort fields.
       let tmdbSort = "popularity.desc";
       if (sortBy === "rating") tmdbSort = `vote_average.${sortOrder}`;
       else if (sortBy === "date") tmdbSort = `primary_release_date.${sortOrder}`;
@@ -53,6 +55,7 @@ export const MovieProvider = ({ children }) => {
       
       const minVotes = sortBy === "rating" ? "&vote_count.gte=100" : "";
 
+      // Use search endpoint when query is present, otherwise discover endpoint.
       let url = searchQuery 
         ? `${BASE_URL}/search/movie?api_key=${API_KEY}&query=${searchQuery}&language=ru-RU&page=${page}`
         : `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=ru-RU&page=${page}&sort_by=${tmdbSort}${minVotes}${selectedGenres.length > 0 ? `&with_genres=${selectedGenres.map(g => genreIds[g]).join(',')}` : ''}`;
@@ -60,6 +63,7 @@ export const MovieProvider = ({ children }) => {
       const data = await request(url); 
       setTotalPages(Math.min(data.total_pages, 500)); 
 
+      // Normalize API payload to the app movie shape.
       const formattedMovies = data.results.map(item => ({
         id: item.id, title: item.title, originalTitle: item.original_title,
         genres: item.genre_ids ? item.genre_ids.map(id => genreMap[id]).filter(Boolean) : ["Кино"],
@@ -77,8 +81,8 @@ export const MovieProvider = ({ children }) => {
     fetchMovies(); 
   }, [fetchMovies]);
 
-  // 3. ТВОЯ ЛОГИКА ТРЕЙЛЕРОВ СОХРАНЕНА (Trailer || Teaser)
   const getMovieVideo = useCallback(async (movieId) => {
+    // Custom movies are local-only and do not have TMDB trailers.
     if (customMovies.some(m => m.id === movieId)) return null; 
     try {
       const data = await request(`${BASE_URL}/movie/${movieId}/videos?api_key=${API_KEY}&language=ru-RU`);
@@ -88,6 +92,7 @@ export const MovieProvider = ({ children }) => {
   }, [customMovies, request]);
 
   const toggleFavorite = useCallback((movieId) => {
+    // Favorites store full movie objects for faster rendering in the favorites page.
     setFavorites(prev => prev.some(fav => fav.id === movieId) ? prev.filter(fav => fav.id !== movieId) : [...prev, [...movies, ...customMovies].find(m => m.id === movieId)].filter(Boolean));
   }, [movies, customMovies]);
 
@@ -113,6 +118,7 @@ export const MovieProvider = ({ children }) => {
     setWatched(prev => prev.filter(id => id !== movieId));
   }, []);
 
+  // Merge local movies on top of remote movies, then apply shared filtering.
   const combinedMovies = useMemo(() => [...customMovies, ...movies], [customMovies, movies]);
 
   const sortedMovies = useFilter(combinedMovies, { searchQuery, selectedGenres, sortBy, sortOrder });

@@ -2,7 +2,6 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 
 export const ThemeContext = createContext();
 
-// Массив всех наших тем для модального окна
 export const availableThemes = [
   { id: 'dark', name: 'Тёмный космос', icon: '🌌', color1: '#0f1014', color2: '#ff0055' },
   { id: 'light', name: 'Светлый', icon: '☀️', color1: '#f0f2f5', color2: '#ff0055' },
@@ -24,7 +23,6 @@ export const ThemeProvider = ({ children }) => {
     document.body.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // Возвращаем функцию прямой установки темы
   return (
     <ThemeContext.Provider value={{ theme, setTheme, availableThemes }}>
       {children}

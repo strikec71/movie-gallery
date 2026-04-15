@@ -1,16 +1,17 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { MovieContext } from '../context/MovieContext';
-import { useNavigate } from 'react-router-dom'; // <-- 1. Добавляем навигацию
+import { useNavigate } from 'react-router-dom';
 
 const Modal = ({ movie, onClose }) => {
   const { getMovieVideo, toggleFavorite, favorites, watched, toggleWatched, customMovies, deleteMovie } = useContext(MovieContext);
   const [trailerKey, setTrailerKey] = useState(null);
-  const navigate = useNavigate(); // <-- 2. Инициализируем навигатор
+  const navigate = useNavigate();
   
   const isFavorite = favorites?.some(f => f.id === movie?.id);
   const isWatched = watched?.includes(movie?.id);
   const isCustomMovie = customMovies?.some(m => m.id === movie?.id);
 
+  // Fetch trailer only for TMDB movies; custom movies have no remote videos.
   useEffect(() => {
     let isMounted = true;
     const fetchVideo = async () => {
@@ -25,6 +26,7 @@ const Modal = ({ movie, onClose }) => {
 
   if (!movie) return null;
 
+  // Confirm destructive action before removing user-created movies.
   const handleDelete = () => {
     if (window.confirm("Удалить этот фильм из вашей коллекции?")) {
       deleteMovie(movie.id);
@@ -32,10 +34,10 @@ const Modal = ({ movie, onClose }) => {
     }
   };
 
-  // 3. Функция для перехода к редактированию
+  // Close modal first to avoid stacked overlays during navigation.
   const handleEdit = () => {
-    onClose(); // Сначала закрываем модалку
-    navigate(`/add-movie?edit=${movie.id}`); // Переходим на страницу формы с ID
+    onClose();
+    navigate(`/add-movie?edit=${movie.id}`);
   };
 
   return (
@@ -109,7 +111,6 @@ const Modal = ({ movie, onClose }) => {
               </a>
             )}
             
-            {/* --- НОВАЯ КНОПКА РЕДАКТИРОВАНИЯ --- */}
             {isCustomMovie && (
               <button 
                 className="modal-btn" 

@@ -1,10 +1,6 @@
 import React, { memo } from 'react';
 
-/**
- * КАРТОЧКА ФИЛЬМА (MEMOIZED)
- * Оптимизирована для предотвращения лишних рендеров в больших списках.
- * Поддерживает статусы "Избранное" и "Просмотрено".
- */
+// Memoized card to reduce rerenders in large lists.
 const MovieCard = memo(({ 
   movie, 
   isFavorite, 
@@ -15,13 +11,13 @@ const MovieCard = memo(({
 }) => {
   if (!movie) return null;
 
-  // Обработчик для кнопки избранного
+  // Prevent parent card click when action buttons are pressed.
   const handleFavoriteClick = (e) => {
     e.stopPropagation();
     if (onToggleFavorite) onToggleFavorite(movie.id);
   };
 
-  // Обработчик для кнопки просмотра
+  // Keep action events scoped to the button.
   const handleWatchedClick = (e) => {
     e.stopPropagation();
     if (onToggleWatched) onToggleWatched(movie.id);
@@ -33,7 +29,6 @@ const MovieCard = memo(({
       onClick={() => onClick && onClick(movie)}
       style={{ opacity: isWatched ? 0.6 : 1 }}
     >
-      {/* ПЕРЕДНЯЯ ПАНЕЛЬ: ПОСТЕР И БЕЙДЖИ */}
       <div className="movie-poster">
         <img 
           src={movie.poster} 
@@ -41,14 +36,12 @@ const MovieCard = memo(({
           loading="lazy" 
         />
         
-        {/* Статус просмотренного (Бейдж) */}
         {isWatched && (
           <div className="status-badge-watched">
             ✔️ Просмотрено
           </div>
         )}
         
-        {/* Рейтинг и Популярность */}
         <span className={`movie-rating ${isWatched ? 'shifted' : ''}`}>
           ⭐ {Number(movie.rating).toFixed(1)}
         </span>
@@ -57,7 +50,6 @@ const MovieCard = memo(({
           🔥 {movie.popularity}
         </span>
         
-        {/* НИЖНЯЯ ПАНЕЛЬ ДЕЙСТВИЙ (Появляется при наведении или всегда на мобилках) */}
         <div className="card-actions-overlay">
           
           <button 
@@ -78,7 +70,6 @@ const MovieCard = memo(({
         </div>
       </div>
       
-      {/* ИНФОРМАЦИОННАЯ ПАНЕЛЬ */}
       <div className="movie-info">
         <h3>{movie.title}</h3>
         <div className="movie-genres-container">
@@ -101,7 +92,5 @@ const MovieCard = memo(({
   );
 });
 
-// Стили для новых классов, которые нужно добавить в index.css (секция карточек)
-// Мы их уже частично прописали в прошлом шаге, но здесь они закреплены за JSX.
 
 export default MovieCard;

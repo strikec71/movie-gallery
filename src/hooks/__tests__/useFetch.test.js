@@ -2,7 +2,6 @@ import { renderHook, act } from '@testing-library/react';
 import { useFetch } from '../useFetch';
 import { describe, it, expect, vi } from 'vitest';
 
-// Подменяем реальный fetch на моковый (чтобы не делать реальные запросы в сеть во время тестов)
 global.fetch = vi.fn();
 
 describe('Тестирование хука useFetch', () => {

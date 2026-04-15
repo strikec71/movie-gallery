@@ -19,7 +19,7 @@ const ThemeModal = ({ isOpen, onClose }) => {
     >
       <div 
         className="modal-content" 
-        onClick={(e) => e.stopPropagation()} // Чтобы клик внутри не закрывал модалку
+        onClick={(e) => e.stopPropagation()}
         style={{
           background: 'var(--bg-card)', border: '1px solid var(--glass-border)',
           borderRadius: '24px', padding: '30px', width: '90%', maxWidth: '600px',
@@ -50,7 +50,6 @@ const ThemeModal = ({ isOpen, onClose }) => {
                 <div style={{ fontSize: '2rem', marginBottom: '10px' }}>{t.icon}</div>
                 <div style={{ fontWeight: isActive ? 'bold' : 'normal', marginBottom: '10px', fontSize: '0.9rem' }}>{t.name}</div>
                 
-                {/* Кружочки с предпросмотром цветов темы */}
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '5px' }}>
                   <span style={{ width: '15px', height: '15px', borderRadius: '50%', background: t.color1, border: '1px solid rgba(255,255,255,0.2)' }}></span>
                   <span style={{ width: '15px', height: '15px', borderRadius: '50%', background: t.color2 }}></span>

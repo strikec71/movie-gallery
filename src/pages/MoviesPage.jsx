@@ -1,11 +1,11 @@
-import React, { useContext, useCallback, Suspense, lazy } from 'react'; // Добавили Suspense и lazy
+import React, { useContext, useCallback, Suspense, lazy } from 'react';
 import { MovieContext } from '../context/MovieContext';
 import MovieListWrapper from '../components/MovieListWrapper';
 import MovieCard from '../components/MovieCard';
 import FilterBar from '../components/FilterBar';
 import { useModal } from '../hooks/useModal';
 
-// 1. УБРАЛИ обычный импорт Modal и заменили на ленивый:
+// Lazy-load modal to keep initial page bundle smaller.
 const Modal = lazy(() => import('../components/Modal'));
 
 const MoviesPage = () => {
@@ -23,6 +23,7 @@ const MoviesPage = () => {
   
   const { isOpen, modalData, open, close } = useModal(); 
 
+  // Render a sliding 5-page window around the current page.
   const renderPagination = useCallback(() => {
     const pages = [];
     let startPage = Math.max(1, page - 2);
@@ -54,6 +55,7 @@ const MoviesPage = () => {
       <FilterBar />
 
       {isLoading ? (
+        // Skeletons preserve layout while async data is loading.
         <div className="movie-list">
           {[...Array(8)].map((_, i) => (
              <div key={i} className="movie-card skeleton-card">
@@ -134,8 +136,8 @@ const MoviesPage = () => {
         </div>
       )}
       
-      {/* 2. Обернули ленивую модалку в Suspense с fallback-интерфейсом */}
       {isOpen && (
+        // Suspense fallback is shown only while modal chunk is loading.
         <Suspense fallback={
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1000, background: 'rgba(0,0,0,0.8)', color: 'white', padding: '20px', borderRadius: '10px' }}>
             Загрузка данных фильма... ⏳

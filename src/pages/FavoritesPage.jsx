@@ -6,22 +6,14 @@ import FilterBar from '../components/FilterBar';
 import Modal from '../components/Modal';
 import { useModal } from '../hooks/useModal';
 
-/**
- * СТРАНИЦА ИЗБРАННОГО
- * Отображает коллекцию пользователя с поддержкой фильтрации и модальных окон.
- * ИСПОЛЬЗУЕТ ПАТТЕРНЫ: Render Props и Compound Components
- */
 const FavoritesPage = () => {
-  // Добавили watched и toggleWatched, так как наша карточка теперь их ждет
   const { favorites, clearFavorites, toggleFavorite, watched, toggleWatched } = useContext(MovieContext);
   
-  // Управление детальным просмотром через наш кастомный хук
   const { isOpen, modalData, open, close } = useModal();
 
   return (
     <div className="page-container" style={{ animation: 'fadeInUp 0.8s var(--ease-spring)' }}>
       
-      {/* ШАПКА СТРАНИЦЫ */}
       <div className="section-header" style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -49,22 +41,17 @@ const FavoritesPage = () => {
         )}
       </div>
 
-      {/* ПАНЕЛЬ ФИЛЬТРОВ (поиск внутри избранного) */}
       <FilterBar />
       
-      {/* КОНТЕНТНАЯ ОБЛАСТЬ */}
       {favorites.length > 0 ? (
-        /* ПАТТЕРН RENDER PROPS */
         <MovieListWrapper 
           movies={favorites} 
           render={(movie) => {
             const isWatched = watched?.includes(movie.id);
 
             return (
-              /* ПАТТЕРН COMPOUND COMPONENTS */
               <MovieCard key={movie.id} movie={movie} isWatched={isWatched} onClick={() => open(movie)}>
                 <MovieCard.Poster>
-                  {/* Кнопка избранного (в этой вкладке она всегда активна, нажатие удаляет) */}
                   <button 
                     className="favorite-action-btn active"
                     onClick={(e) => { 
@@ -93,7 +80,6 @@ const FavoritesPage = () => {
           }} 
         />
       ) : (
-        /* КРАСИВОЕ ПУСТОЕ СОСТОЯНИЕ */
         <div className="no-results" style={{ padding: '100px 20px', textAlign: 'center' }}>
           <div style={{ fontSize: '5rem', marginBottom: '20px', filter: 'grayscale(1)' }}>💔</div>
           <h3>Ваш список пуст</h3>
@@ -111,7 +97,6 @@ const FavoritesPage = () => {
         </div>
       )}
       
-      {/* МОДАЛЬНОЕ ОКНО ДЛЯ ДЕТАЛЕЙ */}
       {isOpen && (
         <Modal movie={modalData} onClose={close} />
       )}

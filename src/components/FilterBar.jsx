@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { MovieContext } from '../context/MovieContext';
-import RouletteModal from './RouletteModal'; // <-- Подключаем модалку рулетки
+import RouletteModal from './RouletteModal';
 
 const GENRES = [
   "Action", "Adventure", "Animation", "Comedy", "Crime", 
@@ -17,9 +17,10 @@ const FilterBar = () => {
     sortOrder, setSortOrder
   } = useContext(MovieContext);
 
-  // Стейт для управления открытием Кино-рулетки
+  // Local UI state for roulette modal visibility.
   const [isRouletteOpen, setIsRouletteOpen] = useState(false);
 
+  // Toggle genre chips in a multi-select list.
   const toggleGenre = (genre) => {
     if (selectedGenres.includes(genre)) {
       setSelectedGenres(selectedGenres.filter(g => g !== genre));
@@ -28,6 +29,7 @@ const FilterBar = () => {
     }
   };
 
+  // Flip sorting direction while keeping the same sort key.
   const toggleSortOrder = () => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
 
   return (
@@ -71,7 +73,6 @@ const FilterBar = () => {
           <button className="genre-tag clear-genres" onClick={() => setSelectedGenres([])}>✕ Сбросить</button>
         )}
         
-        {/* КНОПКА КИНО-РУЛЕТКИ */}
         <button 
           className="genre-tag" 
           onClick={() => setIsRouletteOpen(true)}
@@ -87,7 +88,6 @@ const FilterBar = () => {
         </button>
       </div>
 
-      {/* КОМПОНЕНТ РУЛЕТКИ (ВСПЛЫВАЮЩЕЕ ОКНО) */}
       <RouletteModal isOpen={isRouletteOpen} onClose={() => setIsRouletteOpen(false)} />
     </div>
   );
