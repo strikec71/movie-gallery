@@ -3,7 +3,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { MovieContext } from '../../context/MovieContext';
+
+// Импортируем все наши новые контексты
+import { MovieContext, MovieDataContext, MovieFilterContext } from '../../context/MovieContext';
+import { NotificationContext } from '../../context/NotificationContext';
 import MoviesPage from '../MoviesPage';
 
 const mockMovies = [
@@ -15,30 +18,46 @@ const mockToggleFavorite = vi.fn();
 const mockToggleWatched = vi.fn();
 const mockSetPage = vi.fn();
 const mockGetMovieVideo = vi.fn().mockResolvedValue('fake-trailer-key'); 
-const mockDeleteMovie = vi.fn();
+const mockNotify = vi.fn(); // Мок для уведомлений
 
 const renderWithContext = (component) => {
+  // 1. Создаем фейковые данные для фильтров
+  const filterValue = {
+    page: 1,
+    totalPages: 2,
+    setPage: mockSetPage,
+    searchQuery: '',
+    selectedGenres: [],
+    sortBy: 'rating',
+    sortOrder: 'desc',
+  };
+
+  // 2. Создаем фейковые данные для фильмов
+  const dataValue = {
+    movies: mockMovies,
+    favorites: [],
+    watched: [],
+    customMovies: [],
+    isLoading: false,
+    toggleFavorite: mockToggleFavorite,
+    toggleWatched: mockToggleWatched,
+    getMovieVideo: mockGetMovieVideo,
+  };
+
+  const combinedValue = { ...filterValue, ...dataValue };
+
   return render(
     <MemoryRouter>
-      <MovieContext.Provider value={{
-        movies: mockMovies,
-        isLoading: false,
-        page: 1,
-        totalPages: 2,
-        setPage: mockSetPage,
-        favorites: [],
-        toggleFavorite: mockToggleFavorite,
-        watched: [],
-        toggleWatched: mockToggleWatched,
-        selectedGenres: [],
-        searchQuery: '',
-        sortBy: 'rating',
-        getMovieVideo: mockGetMovieVideo,
-        customMovies: [],
-        deleteMovie: mockDeleteMovie
-      }}>
-        {component}
-      </MovieContext.Provider>
+      {/* Оборачиваем во все новые провайдеры, как в main.jsx */}
+      <NotificationContext.Provider value={{ notify: mockNotify, notifications: [], removeNotification: vi.fn() }}>
+        <MovieDataContext.Provider value={dataValue}>
+          <MovieFilterContext.Provider value={filterValue}>
+            <MovieContext.Provider value={combinedValue}>
+              {component}
+            </MovieContext.Provider>
+          </MovieFilterContext.Provider>
+        </MovieDataContext.Provider>
+      </NotificationContext.Provider>
     </MemoryRouter>
   );
 };
@@ -66,7 +85,6 @@ describe('Интеграционное тестирование: Страниц�
     renderWithContext(<MoviesPage />);
 
     const page2Button = screen.getByText('2');
-    
     fireEvent.click(page2Button);
 
     expect(mockSetPage).toHaveBeenCalledWith(2);

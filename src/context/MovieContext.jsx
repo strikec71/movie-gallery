@@ -18,6 +18,39 @@ const genreIds = { "Action": 28, "Adventure": 12, "Animation": 16, "Comedy": 35,
 export const MovieProvider = ({ children }) => {
   const { notify } = useNotification();
 
+  // --- 2FA AUTHENTICATION STATE ---
+  const [authStatus, setAuthStatus] = useState(() => {
+    return localStorage.getItem('movie-gallery-auth-status') || 'logged_out';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('movie-gallery-auth-status', authStatus);
+  }, [authStatus]);
+
+  const loginStep1 = useCallback((email, password) => {
+    if (email === 'admin@mail.com' && password === '12345') {
+      setAuthStatus('pending_2fa');
+      notify({ type: 'info', message: 'Код отправлен на почту. Введите 0000' });
+    } else {
+      notify({ type: 'error', message: 'Неверный email или пароль' });
+    }
+  }, [notify]);
+
+  const loginStep2_2FA = useCallback((code) => {
+    if (code === '0000') {
+      setAuthStatus('authenticated');
+      notify({ type: 'success', message: 'Успешный вход в систему!' });
+    } else {
+      notify({ type: 'error', message: 'Неверный код 2FA!' });
+    }
+  }, [notify]);
+
+  const logout = useCallback(() => {
+    setAuthStatus('logged_out');
+    notify({ type: 'info', message: 'Вы вышли из системы' });
+  }, [notify]);
+  // --------------------------------
+
   // Remote catalog state (TMDB).
   const [movies, setMovies] = useState([]);
   const [page, setPage] = useState(1);
@@ -57,14 +90,12 @@ export const MovieProvider = ({ children }) => {
     };
   }, [execute, notify]);
 
-  // Reset pagination when any filter/sort parameter changes.
   useEffect(() => { 
     setPage(1); 
   }, [searchQuery, selectedGenres, sortBy, sortOrder]);
 
   const fetchMovies = useCallback(async () => {
     try {
-      // Map UI sort keys to TMDB API sort fields.
       let tmdbSort = "popularity.desc";
       if (sortBy === "rating") tmdbSort = `vote_average.${sortOrder}`;
       else if (sortBy === "date") tmdbSort = `primary_release_date.${sortOrder}`;
@@ -73,7 +104,6 @@ export const MovieProvider = ({ children }) => {
       
       const minVotes = sortBy === "rating" ? "&vote_count.gte=100" : "";
 
-      // Use search endpoint when query is present, otherwise discover endpoint.
       let url = searchQuery 
         ? `${BASE_URL}/search/movie?api_key=${API_KEY}&query=${searchQuery}&language=ru-RU&page=${page}`
         : `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=ru-RU&page=${page}&sort_by=${tmdbSort}${minVotes}${selectedGenres.length > 0 ? `&with_genres=${selectedGenres.map(g => genreIds[g]).join(',')}` : ''}`;
@@ -81,7 +111,6 @@ export const MovieProvider = ({ children }) => {
       const data = await request(url); 
       setTotalPages(Math.min(data.total_pages, 500)); 
 
-      // Normalize API payload to the app movie shape.
       const formattedMovies = data.results.map(item => ({
         id: item.id, title: item.title, originalTitle: item.original_title,
         genres: item.genre_ids ? item.genre_ids.map(id => genreMap[id]).filter(Boolean) : ["Кино"],
@@ -96,14 +125,13 @@ export const MovieProvider = ({ children }) => {
       console.error("Ошибка API:", error);
       notify({ type: 'error', message: 'Failed to load movies from API.' });
     }
-  }, [page, searchQuery, selectedGenres, sortBy, sortOrder, request]);
+  }, [page, searchQuery, selectedGenres, sortBy, sortOrder, request, notify]);
 
   useEffect(() => { 
     fetchMovies(); 
   }, [fetchMovies]);
 
   const getMovieVideo = useCallback(async (movieId) => {
-    // Custom movies are local-only and do not have TMDB trailers.
     if (customMovies.some(m => m.id === movieId)) return null; 
     try {
       const data = await request(`${BASE_URL}/movie/${movieId}/videos?api_key=${API_KEY}&language=ru-RU`);
@@ -113,7 +141,6 @@ export const MovieProvider = ({ children }) => {
   }, [customMovies, request]);
 
   const toggleFavorite = useCallback((movieId) => {
-    // Favorites store full movie objects for faster rendering in the favorites page.
     setFavorites(prev => prev.some(fav => fav.id === movieId) ? prev.filter(fav => fav.id !== movieId) : [...prev, [...movies, ...customMovies].find(m => m.id === movieId)].filter(Boolean));
   }, [movies, customMovies]);
 
@@ -145,9 +172,7 @@ export const MovieProvider = ({ children }) => {
     notify({ type: 'info', message: 'Movie removed from your collection.' });
   }, [execute, notify]);
 
-  // Merge local movies on top of remote movies, then apply shared filtering.
   const combinedMovies = useMemo(() => [...customMovies, ...movies], [customMovies, movies]);
-
   const sortedMovies = useFilter(combinedMovies, { searchQuery, selectedGenres, sortBy, sortOrder });
   const sortedFavorites = useFilter(favorites, { searchQuery, selectedGenres, sortBy, sortOrder });
 
@@ -164,34 +189,23 @@ export const MovieProvider = ({ children }) => {
     getMovieVideo,
     addMovie,
     deleteMovie,
-    updateMovie
-  }), [sortedMovies, sortedFavorites, watched, customMovies, isLoading, isMutating, toggleFavorite, toggleWatched, clearFavorites, fetchMovies, getMovieVideo, addMovie, deleteMovie, updateMovie]);
+    updateMovie,
+    // Экспортируем auth-сущности:
+    authStatus, loginStep1, loginStep2_2FA, logout
+  }), [sortedMovies, sortedFavorites, watched, customMovies, isLoading, isMutating, toggleFavorite, toggleWatched, clearFavorites, fetchMovies, getMovieVideo, addMovie, deleteMovie, updateMovie, authStatus, loginStep1, loginStep2_2FA, logout]);
 
   const filterValue = useMemo(() => ({
-    page,
-    setPage,
-    totalPages,
-    searchQuery,
-    setSearchQuery,
-    selectedGenres,
-    setSelectedGenres,
-    sortBy,
-    setSortBy,
-    sortOrder,
-    setSortOrder,
+    page, setPage, totalPages, searchQuery, setSearchQuery, selectedGenres, setSelectedGenres, sortBy, setSortBy, sortOrder, setSortOrder,
   }), [page, totalPages, searchQuery, selectedGenres, sortBy, sortOrder]);
 
   const value = useMemo(() => ({
-    movies: sortedMovies, favorites: sortedFavorites, watched, customMovies, isLoading: isLoading || isMutating,
-    page, setPage, totalPages, searchQuery, setSearchQuery, selectedGenres, setSelectedGenres,
-    sortBy, setSortBy, sortOrder, setSortOrder, toggleFavorite, toggleWatched, clearFavorites,
-    fetchMovies, getMovieVideo, addMovie, deleteMovie, updateMovie
-  }), [sortedMovies, sortedFavorites, watched, customMovies, isLoading, isMutating, page, totalPages, searchQuery, selectedGenres, sortBy, sortOrder, toggleFavorite, toggleWatched, clearFavorites, fetchMovies, getMovieVideo, addMovie, deleteMovie, updateMovie]);
+    ...dataValue, ...filterValue
+  }), [dataValue, filterValue]);
 
   return (
     <MovieDataContext.Provider value={dataValue}>
       <MovieFilterContext.Provider value={filterValue}>
-        <MovieContext.Provider value={{ ...dataValue, ...filterValue }}>
+        <MovieContext.Provider value={value}>
           {children}
         </MovieContext.Provider>
       </MovieFilterContext.Provider>
