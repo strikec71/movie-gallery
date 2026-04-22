@@ -1,4 +1,7 @@
 import React, { createContext, memo, useContext, useMemo } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { MovieContext } from '../context/MovieContext';
+import { useNavigate } from 'react-router-dom';
 
 const MovieCardContext = createContext(null);
 
@@ -60,18 +63,31 @@ const MovieCardBase = memo(({
 });
 
 const Header = ({ children }) => <div className="movie-card-header">{children}</div>;
-
 const Body = ({ children }) => <div className="movie-card-body">{children}</div>;
-
 const Footer = ({ children }) => <div className="movie-card-footer">{children}</div>;
 
 const Poster = ({ children }) => {
   const { movie, isFavorite, isWatched, handleFavoriteClick, handleWatchedClick } = useMovieCardContext();
+  const { isAdmin } = useAuth();
+  const { deleteMovie } = useContext(MovieContext);
+  const navigate = useNavigate();
+
+  const handleDelete = (e) => {
+    e.stopPropagation();
+    if (window.confirm('Точно удалить фильм?')) {
+      deleteMovie(movie.id);
+    }
+  };
+
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    navigate(`/add-movie?edit=${movie.id}`);
+  };
 
   return (
     <div className="movie-poster">
       <img
-        src={movie.poster}
+        src={movie.poster || movie.poster_path}
         alt={movie.title}
         loading="lazy"
       />
@@ -83,12 +99,32 @@ const Poster = ({ children }) => {
       )}
 
       <span className={`movie-rating ${isWatched ? 'shifted' : ''}`}>
-        ⭐ {Number(movie.rating).toFixed(1)}
+        ⭐ {Number(movie.rating || movie.vote_average || 0).toFixed(1)}
       </span>
 
       <span className="movie-popularity">
-        🔥 {movie.popularity}
+        🔥 {movie.popularity || 'NEW'}
       </span>
+
+      {/* Админские кнопки для кастомных фильмов */}
+      {isAdmin && movie.isCustom && (
+        <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', gap: '5px', zIndex: 10 }}>
+          <button 
+            onClick={handleEdit}
+            style={{ background: 'var(--glass)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer', fontSize: '1rem' }}
+            title="Редактировать"
+          >
+            ✏️
+          </button>
+          <button 
+            onClick={handleDelete}
+            style={{ background: 'var(--glass)', border: 'none', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer', fontSize: '1rem', color: '#ff3b3b' }}
+            title="Удалить"
+          >
+            🗑️
+          </button>
+        </div>
+      )}
 
       <div className="card-actions-overlay">
         {children || (
@@ -138,12 +174,5 @@ const Info = () => {
   );
 };
 
-const MovieCard = Object.assign(MovieCardBase, {
-  Header,
-  Body,
-  Footer,
-  Poster,
-  Info,
-});
-
+const MovieCard = Object.assign(MovieCardBase, { Header, Body, Footer, Poster, Info });
 export default MovieCard;

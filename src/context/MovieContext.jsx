@@ -1,8 +1,9 @@
 import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useFetch } from '../hooks/useFetch';
 import { useFilter } from '../hooks/useFilter';
-import { mockMoviesApi } from '../api/mockMoviesApi';
 import { useNotification } from './NotificationContext';
+import { useAuth } from './AuthContext'; // <-- Наша реальная авторизация
+import { supabase } from '../api/supabase'; // <-- Наша база данных
 
 export const MovieContext = createContext();
 export const MovieDataContext = createContext();
@@ -17,39 +18,7 @@ const genreIds = { "Action": 28, "Adventure": 12, "Animation": 16, "Comedy": 35,
 
 export const MovieProvider = ({ children }) => {
   const { notify } = useNotification();
-
-  // --- 2FA AUTHENTICATION STATE ---
-  const [authStatus, setAuthStatus] = useState(() => {
-    return localStorage.getItem('movie-gallery-auth-status') || 'logged_out';
-  });
-
-  useEffect(() => {
-    localStorage.setItem('movie-gallery-auth-status', authStatus);
-  }, [authStatus]);
-
-  const loginStep1 = useCallback((email, password) => {
-    if (email === 'admin@mail.com' && password === '12345') {
-      setAuthStatus('pending_2fa');
-      notify({ type: 'info', message: 'Код отправлен на почту. Введите 0000' });
-    } else {
-      notify({ type: 'error', message: 'Неверный email или пароль' });
-    }
-  }, [notify]);
-
-  const loginStep2_2FA = useCallback((code) => {
-    if (code === '0000') {
-      setAuthStatus('authenticated');
-      notify({ type: 'success', message: 'Успешный вход в систему!' });
-    } else {
-      notify({ type: 'error', message: 'Неверный код 2FA!' });
-    }
-  }, [notify]);
-
-  const logout = useCallback(() => {
-    setAuthStatus('logged_out');
-    notify({ type: 'info', message: 'Вы вышли из системы' });
-  }, [notify]);
-  // --------------------------------
+  const { user, setIsAuthModalOpen } = useAuth(); // Берем данные реального юзера
 
   // Remote catalog state (TMDB).
   const [movies, setMovies] = useState([]);
@@ -62,37 +31,48 @@ export const MovieProvider = ({ children }) => {
   const [sortOrder, setSortOrder] = useState("desc");
 
   const { loading: isLoading, request } = useFetch();
-  const { loading: isMutating, execute } = useFetch();
 
-  // Local user collections persisted in localStorage.
+  // Local user collections
   const [customMovies, setCustomMovies] = useState([]);
-  const [favorites, setFavorites] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('react-movie-favorites')) || []; } catch { return []; }
-  });
+  const [favorites, setFavorites] = useState([]);
+  
+  // Просмотренное пока оставляем в localStorage (по желанию можно тоже перенести в БД)
   const [watched, setWatched] = useState(() => {
     try { return JSON.parse(localStorage.getItem('react-movie-watched')) || []; } catch { return []; }
   });
 
-  useEffect(() => { localStorage.setItem('react-movie-favorites', JSON.stringify(favorites)); }, [favorites]);
   useEffect(() => { localStorage.setItem('react-movie-watched', JSON.stringify(watched)); }, [watched]);
+// --- ЗАГРУЗКА ДАННЫХ ИЗ SUPABASE ---
+  const fetchCustomMovies = useCallback(async () => {
+    const { data: dbMovies } = await supabase.from('custom_movies').select('*');
+    if (dbMovies) {
+      setCustomMovies(dbMovies.map(m => ({
+        id: m.id, title: m.title, vote_average: m.vote_average,
+        release_date: m.release_date, poster_path: m.poster_path,
+        genres: m.genres || [], isCustom: true, rating: m.vote_average, year: m.release_date,
+        description: m.description // Добавили описание, чтобы по нему тоже работал поиск!
+      })));
+    }
+  }, []);
 
   useEffect(() => {
-    let isActive = true;
-    execute(() => mockMoviesApi.getAll())
-      .then((items) => {
-        if (isActive) setCustomMovies(items);
-      })
-      .catch(() => {
-        notify({ type: 'error', message: 'Failed to load local collection.' });
-      });
-    return () => {
-      isActive = false;
-    };
-  }, [execute, notify]);
+    fetchCustomMovies();
 
-  useEffect(() => { 
-    setPage(1); 
-  }, [searchQuery, selectedGenres, sortBy, sortOrder]);
+    const fetchFavorites = async () => {
+      if (user) {
+        const { data: favData } = await supabase.from('favorites').select('movie_data').eq('user_id', user.id);
+        if (favData) {
+          setFavorites(favData.map(item => item.movie_data));
+        }
+      } else {
+        setFavorites([]); // Если вышел - очищаем
+      }
+    };
+    fetchFavorites();
+  }, [user, fetchCustomMovies]);
+
+  // --- ЗАГРУЗКА ИЗ TMDB (Осталась без изменений) ---
+  useEffect(() => { setPage(1); }, [searchQuery, selectedGenres, sortBy, sortOrder]);
 
   const fetchMovies = useCallback(async () => {
     try {
@@ -127,10 +107,9 @@ export const MovieProvider = ({ children }) => {
     }
   }, [page, searchQuery, selectedGenres, sortBy, sortOrder, request, notify]);
 
-  useEffect(() => { 
-    fetchMovies(); 
-  }, [fetchMovies]);
+  useEffect(() => { fetchMovies(); }, [fetchMovies]);
 
+  // --- ТРЕЙЛЕРЫ (Остались без изменений) ---
   const getMovieVideo = useCallback(async (movieId) => {
     if (customMovies.some(m => m.id === movieId)) return null; 
     try {
@@ -140,37 +119,66 @@ export const MovieProvider = ({ children }) => {
     } catch (error) { return null; }
   }, [customMovies, request]);
 
-  const toggleFavorite = useCallback((movieId) => {
-    setFavorites(prev => prev.some(fav => fav.id === movieId) ? prev.filter(fav => fav.id !== movieId) : [...prev, [...movies, ...customMovies].find(m => m.id === movieId)].filter(Boolean));
-  }, [movies, customMovies]);
+  // --- ИЗБРАННОЕ ЧЕРЕЗ SUPABASE ---
+  const toggleFavorite = useCallback(async (movieId) => {
+    if (!user) {
+      setIsAuthModalOpen(true); // Просим войти
+      return;
+    }
+
+    const movieIdString = String(movieId);
+    // Проверяем, есть ли фильм уже в избранном (учитывая, что id может быть строкой или числом)
+    const isExist = favorites.find(f => String(f.id) === movieIdString);
+
+    if (isExist) {
+      // Оптимистичное удаление из UI
+      setFavorites(prev => prev.filter(f => String(f.id) !== movieIdString));
+      // Удаление из БД
+      await supabase.from('favorites').delete().match({ user_id: user.id, movie_id: movieIdString });
+    } else {
+      // Ищем полный объект фильма в общих массивах
+      const movieObj = [...movies, ...customMovies].find(m => String(m.id) === movieIdString);
+      if (!movieObj) return;
+
+      // Оптимистичное добавление в UI
+      setFavorites(prev => [...prev, movieObj]);
+      // Добавление в БД
+      await supabase.from('favorites').insert([{ user_id: user.id, movie_id: movieIdString, movie_data: movieObj }]);
+    }
+  }, [user, favorites, movies, customMovies, setIsAuthModalOpen]);
 
   const toggleWatched = useCallback((movieId) => {
     setWatched(prev => prev.includes(movieId) ? prev.filter(id => id !== movieId) : [...prev, movieId]);
   }, []);
 
-  const clearFavorites = useCallback(() => setFavorites([]), []);
+  const clearFavorites = useCallback(async () => {
+    if (!user) return;
+    setFavorites([]);
+    await supabase.from('favorites').delete().eq('user_id', user.id);
+  }, [user]);
 
-  const addMovie = useCallback(async (newMovie, isWatchedFlag) => {
-    const createdMovie = await execute(() => mockMoviesApi.create(newMovie));
-    setCustomMovies(prev => [createdMovie, ...prev]);
-    if (isWatchedFlag) setWatched(prev => [...prev, createdMovie.id]);
-    notify({ type: 'success', message: 'Movie added to your collection.' });
-  }, [execute, notify]);
-
-  const updateMovie = useCallback(async (updatedMovie) => {
-    const savedMovie = await execute(() => mockMoviesApi.update(updatedMovie));
-    setCustomMovies(prev => prev.map(m => m.id === savedMovie.id ? savedMovie : m));
-    setFavorites(prev => prev.map(f => f.id === savedMovie.id ? savedMovie : f));
-    notify({ type: 'success', message: 'Movie changes saved.' });
-  }, [execute, notify]);
-
+  // Функции CRUD оставляем для обратной совместимости, если они где-то используются
+  const addMovie = useCallback(() => {}, []); 
+  const updateMovie = useCallback(() => {}, []);
   const deleteMovie = useCallback(async (movieId) => {
-    await execute(() => mockMoviesApi.remove(movieId));
+    const { error } = await supabase
+      .from('custom_movies')
+      .delete()
+      .eq('id', movieId);
+
+    if (error) {
+      console.error('Ошибка удаления:', error);
+      notify({ type: 'error', message: 'Ошибка при удалении из БД' });
+      return;
+    }
+
     setCustomMovies(prev => prev.filter(m => m.id !== movieId));
+    
+    // Также чистим из Избранного и Просмотренного, если он там был
     setFavorites(prev => prev.filter(f => f.id !== movieId));
-    setWatched(prev => prev.filter(id => id !== movieId));
-    notify({ type: 'info', message: 'Movie removed from your collection.' });
-  }, [execute, notify]);
+    
+    notify({ type: 'info', message: 'Фильм навсегда удален из базы.' });
+  }, [notify]);
 
   const combinedMovies = useMemo(() => [...customMovies, ...movies], [customMovies, movies]);
   const sortedMovies = useFilter(combinedMovies, { searchQuery, selectedGenres, sortBy, sortOrder });
@@ -181,18 +189,17 @@ export const MovieProvider = ({ children }) => {
     favorites: sortedFavorites,
     watched,
     customMovies,
-    isLoading: isLoading || isMutating,
+    isLoading: isLoading,
     toggleFavorite,
     toggleWatched,
     clearFavorites,
     fetchMovies,
+    fetchCustomMovies, // <--- Добавили вот эту строчку!
     getMovieVideo,
     addMovie,
     deleteMovie,
     updateMovie,
-    // Экспортируем auth-сущности:
-    authStatus, loginStep1, loginStep2_2FA, logout
-  }), [sortedMovies, sortedFavorites, watched, customMovies, isLoading, isMutating, toggleFavorite, toggleWatched, clearFavorites, fetchMovies, getMovieVideo, addMovie, deleteMovie, updateMovie, authStatus, loginStep1, loginStep2_2FA, logout]);
+  }), [sortedMovies, sortedFavorites, watched, customMovies, isLoading, toggleFavorite, toggleWatched, clearFavorites, fetchMovies, fetchCustomMovies, getMovieVideo, addMovie, deleteMovie, updateMovie]);
 
   const filterValue = useMemo(() => ({
     page, setPage, totalPages, searchQuery, setSearchQuery, selectedGenres, setSelectedGenres, sortBy, setSortBy, sortOrder, setSortOrder,
