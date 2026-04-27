@@ -40,8 +40,8 @@ const RouletteModal = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  const isFav = currentMovie ? favorites?.some(f => f.id === currentMovie.id) : false;
-  const isWatch = currentMovie ? watched?.includes(currentMovie.id) : false;
+  const isFav = currentMovie ? (Array.isArray(favorites) && favorites.some(f => String(f?.id || f) === String(currentMovie.id))) : false;
+  const isWatch = currentMovie ? (Array.isArray(watched) && watched.some(w => String(w?.id || w) === String(currentMovie.id))) : false;
 
   return createPortal(
     <div className="modal-overlay" onClick={onClose} style={{

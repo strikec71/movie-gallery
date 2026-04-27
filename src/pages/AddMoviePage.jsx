@@ -16,7 +16,6 @@ const AddMoviePage = () => {
   const [searchParams] = useSearchParams();
   const { user, isAdmin, loading: authLoading } = useAuth();
   
-  // Достаем функцию синхронизации из MovieContext
   const { fetchCustomMovies } = useContext(MovieContext);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,11 +24,9 @@ const AddMoviePage = () => {
   const editId = searchParams.get('edit');
   const isEditMode = !!editId;
 
-  // Uncontrolled refs are used for fields that do not need live validation.
   const posterUrlRef = useRef(null);
   const descriptionRef = useRef(null);
 
-  // Validation is shared with useForm so rules stay in one place.
   const validateField = useCallback((name, value) => {
     let errorMsg = '';
     switch (name) {
@@ -57,7 +54,6 @@ const AddMoviePage = () => {
     isWatched: false
   }, validateField);
 
-  // Загружаем данные фильма из БД, если это режим редактирования
   useEffect(() => {
     const fetchMovieToEdit = async () => {
       if (isEditMode) {
@@ -101,7 +97,6 @@ const AddMoviePage = () => {
     e.preventDefault();
     setErrorMessage('');
     
-    // Validate all required fields
     const titleError = validateField('title', values.title);
     const ratingError = validateField('rating', values.rating);
     const genresError = validateField('genres', values.genres);
@@ -122,11 +117,10 @@ const AddMoviePage = () => {
         genres: values.genres,
         description: descriptionValue.trim(),
         poster_path: posterValue || `https://via.placeholder.com/500x750/181a20/ff0055?text=${encodeURIComponent(values.title)}`,
-        user_id: user.id // Привязка фильма к автору-админу
+        user_id: user.id
       };
 
       if (isEditMode) {
-        // Обновляем существующий фильм в БД
         const { error } = await supabase
           .from('custom_movies')
           .update(moviePayload)
@@ -134,7 +128,6 @@ const AddMoviePage = () => {
           
         if (error) throw error;
       } else {
-        // Создаем новый фильм в БД
         const { error } = await supabase
           .from('custom_movies')
           .insert([moviePayload]);
@@ -142,7 +135,6 @@ const AddMoviePage = () => {
         if (error) throw error;
       }
 
-      // Синхронизируем локальный стейт с базой данных перед переходом
       await fetchCustomMovies();
 
       navigate('/movies');
@@ -154,10 +146,8 @@ const AddMoviePage = () => {
     }
   };
 
-  // --- ЛОГИКА ЗАЩИТЫ СТРАНИЦЫ ---
   if (authLoading) return <div className="page-container"><h2 style={{ textAlign: 'center' }}>Проверка доступа...</h2></div>;
 
-  // Если юзер не залогинен или у него нет роли 'admin'
   if (!user || !isAdmin) {
     return (
       <div className="page-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>

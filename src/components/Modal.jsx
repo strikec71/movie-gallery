@@ -7,11 +7,12 @@ const Modal = ({ movie, onClose }) => {
   const [trailerKey, setTrailerKey] = useState(null);
   const navigate = useNavigate();
   
-  const isFavorite = favorites?.some(f => f.id === movie?.id);
-  const isWatched = watched?.includes(movie?.id);
-  const isCustomMovie = customMovies?.some(m => m.id === movie?.id);
+  // ИСПРАВЛЕНО ЗДЕСЬ: Умная проверка для избранного и просмотренного
+  const isFavorite = Array.isArray(favorites) && favorites.some(f => String(f?.id || f) === String(movie?.id));
+  const isWatched = Array.isArray(watched) && watched.some(w => String(w?.id || w) === String(movie?.id));
+  
+  const isCustomMovie = customMovies?.some(m => String(m.id) === String(movie?.id));
 
-  // Fetch trailer only for TMDB movies; custom movies have no remote videos.
   useEffect(() => {
     let isMounted = true;
     const fetchVideo = async () => {
@@ -26,7 +27,6 @@ const Modal = ({ movie, onClose }) => {
 
   if (!movie) return null;
 
-  // Confirm destructive action before removing user-created movies.
   const handleDelete = async () => {
     if (window.confirm("Удалить этот фильм из вашей коллекции?")) {
       await deleteMovie(movie.id);
@@ -34,7 +34,6 @@ const Modal = ({ movie, onClose }) => {
     }
   };
 
-  // Close modal first to avoid stacked overlays during navigation.
   const handleEdit = () => {
     onClose();
     navigate(`/add-movie?edit=${movie.id}`);

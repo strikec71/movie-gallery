@@ -10,7 +10,6 @@ const NavBar = () => {
   const { favorites } = useContext(MovieContext);
   const { theme, availableThemes } = useTheme();
   
-  // Достаем данные юзера и управление модалкой (signOut убрали)
   const { user, isAdmin, isAuthModalOpen, setIsAuthModalOpen } = useAuth(); 
 
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);

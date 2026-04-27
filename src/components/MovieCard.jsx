@@ -1,4 +1,4 @@
-import React, { createContext, memo, useContext, useMemo } from 'react';
+import React, { createContext, memo, useContext, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { MovieContext } from '../context/MovieContext';
 import { useNavigate } from 'react-router-dom';
@@ -13,41 +13,52 @@ const useMovieCardContext = () => {
 
 const MovieCardBase = memo(({
   movie,
-  isFavorite = false,
-  isWatched = false,
+  isFavorite: propIsFavorite, // Принимаем, но перепроверим сами
+  isWatched: propIsWatched,   // Принимаем, но перепроверим сами
   onToggleFavorite,
   onToggleWatched,
   onClick,
   children,
 }) => {
+  // 1. Вытягиваем глобальные данные, чтобы карточка сама знала "правду"
+  const { favorites, watched, toggleFavorite, toggleWatched } = useContext(MovieContext);
+
   if (!movie) return null;
 
-  const handleFavoriteClick = (e) => {
-    e.stopPropagation();
-    if (onToggleFavorite) onToggleFavorite(movie.id);
-  };
+  // 2. УМНАЯ ПРОВЕРКА: Ищем фильм в массиве объектов (надежная защита от старых багов)
+  const isFav = propIsFavorite || (Array.isArray(favorites) && favorites.some(f => String(f?.id || f) === String(movie.id)));
+  const isWtch = propIsWatched || (Array.isArray(watched) && watched.some(w => String(w?.id || w) === String(movie.id)));
 
-  const handleWatchedClick = (e) => {
+  const finalToggleFav = onToggleFavorite || toggleFavorite;
+  const finalToggleWatch = onToggleWatched || toggleWatched;
+
+  // 3. Используем useCallback, чтобы React успевал обновлять контекст
+  const handleFavoriteClick = useCallback((e) => {
     e.stopPropagation();
-    if (onToggleWatched) onToggleWatched(movie.id);
-  };
+    if (finalToggleFav) finalToggleFav(movie.id);
+  }, [finalToggleFav, movie.id]);
+
+  const handleWatchedClick = useCallback((e) => {
+    e.stopPropagation();
+    if (finalToggleWatch) finalToggleWatch(movie.id);
+  }, [finalToggleWatch, movie.id]);
 
   const contextValue = useMemo(() => ({
     movie,
-    isFavorite,
-    isWatched,
+    isFavorite: isFav,
+    isWatched: isWtch,
     handleFavoriteClick,
     handleWatchedClick,
-  }), [movie, isFavorite, isWatched]);
+  }), [movie, isFav, isWtch, handleFavoriteClick, handleWatchedClick]);
 
   const hasCompoundChildren = React.Children.count(children) > 0;
 
   return (
     <MovieCardContext.Provider value={contextValue}>
       <div
-        className={`movie-card ${isWatched ? 'watched-mode' : ''}`}
+        className={`movie-card ${isWtch ? 'watched-mode' : ''}`}
         onClick={() => onClick && onClick(movie)}
-        style={{ opacity: isWatched ? 0.6 : 1 }}
+        style={{ opacity: isWtch ? 0.6 : 1 }}
       >
         {hasCompoundChildren ? (
           children
@@ -106,7 +117,6 @@ const Poster = ({ children }) => {
         🔥 {movie.popularity || 'NEW'}
       </span>
 
-      {/* Админские кнопки для кастомных фильмов */}
       {isAdmin && movie.isCustom && (
         <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', gap: '5px', zIndex: 10 }}>
           <button 

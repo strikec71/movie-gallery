@@ -4,7 +4,6 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
-// Импортируем все наши новые контексты
 import { MovieContext, MovieDataContext, MovieFilterContext } from '../../context/MovieContext';
 import { NotificationContext } from '../../context/NotificationContext';
 import MoviesPage from '../MoviesPage';
@@ -18,10 +17,9 @@ const mockToggleFavorite = vi.fn();
 const mockToggleWatched = vi.fn();
 const mockSetPage = vi.fn();
 const mockGetMovieVideo = vi.fn().mockResolvedValue('fake-trailer-key'); 
-const mockNotify = vi.fn(); // Мок для уведомлений
+const mockNotify = vi.fn();
 
 const renderWithContext = (component) => {
-  // 1. Создаем фейковые данные для фильтров
   const filterValue = {
     page: 1,
     totalPages: 2,
@@ -32,7 +30,6 @@ const renderWithContext = (component) => {
     sortOrder: 'desc',
   };
 
-  // 2. Создаем фейковые данные для фильмов
   const dataValue = {
     movies: mockMovies,
     favorites: [],
@@ -48,7 +45,6 @@ const renderWithContext = (component) => {
 
   return render(
     <MemoryRouter>
-      {/* Оборачиваем во все новые провайдеры, как в main.jsx */}
       <NotificationContext.Provider value={{ notify: mockNotify, notifications: [], removeNotification: vi.fn() }}>
         <MovieDataContext.Provider value={dataValue}>
           <MovieFilterContext.Provider value={filterValue}>

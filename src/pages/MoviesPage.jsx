@@ -5,7 +5,6 @@ import MovieCard from '../components/MovieCard';
 import FilterBar from '../components/FilterBar';
 import { useModal } from '../hooks/useModal';
 
-// Lazy-load modal to keep initial page bundle smaller.
 const Modal = lazy(() => import('../components/Modal'));
 
 const MoviesPage = () => {
@@ -28,11 +27,9 @@ const MoviesPage = () => {
     try {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch {
-      // jsdom does not implement scrollTo in tests.
     }
   }, []);
 
-  // Render a sliding 5-page window around the current page.
   const renderPagination = useCallback(() => {
     const pages = [];
     let startPage = Math.max(1, page - 2);
@@ -64,7 +61,6 @@ const MoviesPage = () => {
       <FilterBar />
 
       {isLoading ? (
-        // Skeletons preserve layout while async data is loading.
         <div className="movie-list">
           {[...Array(8)].map((_, i) => (
              <div key={i} className="movie-card skeleton-card">
@@ -79,8 +75,9 @@ const MoviesPage = () => {
         <MovieListWrapper 
           movies={movies} 
           render={(movie) => {
-            const isFavorite = favorites?.some(f => f.id === movie.id);
-            const isWatched = watched?.includes(movie.id);
+            // ИСПРАВЛЕНО ТУТ:
+            const isFavorite = favorites?.some(f => String(f.id) === String(movie.id));
+            const isWatched = watched?.some(w => String(w.id) === String(movie.id));
 
             return (
               <MovieCard key={movie.id} movie={movie} isWatched={isWatched} onClick={() => open(movie)}>
@@ -146,7 +143,6 @@ const MoviesPage = () => {
       )}
       
       {isOpen && (
-        // Suspense fallback is shown only while modal chunk is loading.
         <Suspense fallback={
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1000, background: 'rgba(0,0,0,0.8)', color: 'white', padding: '20px', borderRadius: '10px' }}>
             Загрузка данных фильма... ⏳

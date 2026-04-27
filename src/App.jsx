@@ -9,6 +9,8 @@ import { SpeedInsights } from "@vercel/speed-insights/react"
 const HomePage = lazy(() => import('./pages/HomePage'));
 const MoviesPage = lazy(() => import('./pages/MoviesPage'));
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
+// 1. ИМПОРТИРУЕМ НОВУЮ СТРАНИЦУ
+const WatchedPage = lazy(() => import('./pages/WatchedPage')); 
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const AddMoviePage = lazy(() => import('./pages/AddMoviePage'));
@@ -25,6 +27,9 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/movies" element={<MoviesPage />} />
               <Route path="/favorites" element={<FavoritesPage />} />
+              
+              <Route path="/watched" element={<WatchedPage />} /> 
+              
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/add-movie" element={<AddMoviePage />} />
               <Route path="*" element={<NotFoundPage />} />

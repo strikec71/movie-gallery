@@ -47,7 +47,8 @@ const FavoritesPage = () => {
         <MovieListWrapper 
           movies={favorites} 
           render={(movie) => {
-            const isWatched = watched?.includes(movie.id);
+            // ИСПРАВЛЕНО ТУТ:
+            const isWatched = watched?.some(w => String(w.id) === String(movie.id));
 
             return (
               <MovieCard key={movie.id} movie={movie} isWatched={isWatched} onClick={() => open(movie)}>
@@ -85,7 +86,6 @@ const FavoritesPage = () => {
           <h3>Ваш список пуст</h3>
           <p style={{ color: 'var(--text-muted)', maxWidth: '400px', margin: '10px auto' }}>
             Добавляйте фильмы в избранное, чтобы они всегда были под рукой. 
-            Ваша коллекция хранится локально.
           </p>
           <button 
             className="btn-primary" 

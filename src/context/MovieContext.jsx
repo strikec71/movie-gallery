@@ -2,8 +2,8 @@ import React, { createContext, useState, useEffect, useMemo, useCallback } from 
 import { useFetch } from '../hooks/useFetch';
 import { useFilter } from '../hooks/useFilter';
 import { useNotification } from './NotificationContext';
-import { useAuth } from './AuthContext'; // <-- Наша реальная авторизация
-import { supabase } from '../api/supabase'; // <-- Наша база данных
+import { useAuth } from './AuthContext';
+import { supabase } from '../api/supabase';
 
 export const MovieContext = createContext();
 export const MovieDataContext = createContext();
@@ -18,9 +18,8 @@ const genreIds = { "Action": 28, "Adventure": 12, "Animation": 16, "Comedy": 35,
 
 export const MovieProvider = ({ children }) => {
   const { notify } = useNotification();
-  const { user, setIsAuthModalOpen } = useAuth(); // Берем данные реального юзера
+  const { user, setIsAuthModalOpen } = useAuth();
 
-  // Remote catalog state (TMDB).
   const [movies, setMovies] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -32,17 +31,10 @@ export const MovieProvider = ({ children }) => {
 
   const { loading: isLoading, request } = useFetch();
 
-  // Local user collections
   const [customMovies, setCustomMovies] = useState([]);
   const [favorites, setFavorites] = useState([]);
-  
-  // Просмотренное пока оставляем в localStorage (по желанию можно тоже перенести в БД)
-  const [watched, setWatched] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('react-movie-watched')) || []; } catch { return []; }
-  });
+  const [watched, setWatched] = useState([]); // Очистили от localStorage, теперь пустой массив по умолчанию
 
-  useEffect(() => { localStorage.setItem('react-movie-watched', JSON.stringify(watched)); }, [watched]);
-// --- ЗАГРУЗКА ДАННЫХ ИЗ SUPABASE ---
   const fetchCustomMovies = useCallback(async () => {
     const { data: dbMovies } = await supabase.from('custom_movies').select('*');
     if (dbMovies) {
@@ -50,7 +42,7 @@ export const MovieProvider = ({ children }) => {
         id: m.id, title: m.title, vote_average: m.vote_average,
         release_date: m.release_date, poster_path: m.poster_path,
         genres: m.genres || [], isCustom: true, rating: m.vote_average, year: m.release_date,
-        description: m.description // Добавили описание, чтобы по нему тоже работал поиск!
+        description: m.description
       })));
     }
   }, []);
@@ -58,20 +50,28 @@ export const MovieProvider = ({ children }) => {
   useEffect(() => {
     fetchCustomMovies();
 
-    const fetchFavorites = async () => {
+    const fetchUserData = async () => {
       if (user) {
+        // Загружаем Избранное
         const { data: favData } = await supabase.from('favorites').select('movie_data').eq('user_id', user.id);
         if (favData) {
           setFavorites(favData.map(item => item.movie_data));
         }
+
+        // Загружаем Просмотренное
+        const { data: watchedData } = await supabase.from('watched').select('movie_data').eq('user_id', user.id);
+        if (watchedData) {
+          setWatched(watchedData.map(item => item.movie_data));
+        }
       } else {
-        setFavorites([]); // Если вышел - очищаем
+        // Если вышел - очищаем
+        setFavorites([]);
+        setWatched([]);
       }
     };
-    fetchFavorites();
+    fetchUserData();
   }, [user, fetchCustomMovies]);
 
-  // --- ЗАГРУЗКА ИЗ TMDB (Осталась без изменений) ---
   useEffect(() => { setPage(1); }, [searchQuery, selectedGenres, sortBy, sortOrder]);
 
   const fetchMovies = useCallback(async () => {
@@ -109,7 +109,6 @@ export const MovieProvider = ({ children }) => {
 
   useEffect(() => { fetchMovies(); }, [fetchMovies]);
 
-  // --- ТРЕЙЛЕРЫ (Остались без изменений) ---
   const getMovieVideo = useCallback(async (movieId) => {
     if (customMovies.some(m => m.id === movieId)) return null; 
     try {
@@ -119,37 +118,47 @@ export const MovieProvider = ({ children }) => {
     } catch (error) { return null; }
   }, [customMovies, request]);
 
-  // --- ИЗБРАННОЕ ЧЕРЕЗ SUPABASE ---
   const toggleFavorite = useCallback(async (movieId) => {
     if (!user) {
-      setIsAuthModalOpen(true); // Просим войти
+      setIsAuthModalOpen(true);
       return;
     }
 
     const movieIdString = String(movieId);
-    // Проверяем, есть ли фильм уже в избранном (учитывая, что id может быть строкой или числом)
     const isExist = favorites.find(f => String(f.id) === movieIdString);
 
     if (isExist) {
-      // Оптимистичное удаление из UI
       setFavorites(prev => prev.filter(f => String(f.id) !== movieIdString));
-      // Удаление из БД
       await supabase.from('favorites').delete().match({ user_id: user.id, movie_id: movieIdString });
     } else {
-      // Ищем полный объект фильма в общих массивах
       const movieObj = [...movies, ...customMovies].find(m => String(m.id) === movieIdString);
       if (!movieObj) return;
 
-      // Оптимистичное добавление в UI
       setFavorites(prev => [...prev, movieObj]);
-      // Добавление в БД
       await supabase.from('favorites').insert([{ user_id: user.id, movie_id: movieIdString, movie_data: movieObj }]);
     }
   }, [user, favorites, movies, customMovies, setIsAuthModalOpen]);
 
-  const toggleWatched = useCallback((movieId) => {
-    setWatched(prev => prev.includes(movieId) ? prev.filter(id => id !== movieId) : [...prev, movieId]);
-  }, []);
+  const toggleWatched = useCallback(async (movieId) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    const movieIdString = String(movieId);
+    const isExist = watched.find(w => String(w.id) === movieIdString);
+
+    if (isExist) {
+      setWatched(prev => prev.filter(w => String(w.id) !== movieIdString));
+      await supabase.from('watched').delete().match({ user_id: user.id, movie_id: movieIdString });
+    } else {
+      const movieObj = [...movies, ...customMovies].find(m => String(m.id) === movieIdString);
+      if (!movieObj) return;
+
+      setWatched(prev => [...prev, movieObj]);
+      await supabase.from('watched').insert([{ user_id: user.id, movie_id: movieIdString, movie_data: movieObj }]);
+    }
+  }, [user, watched, movies, customMovies, setIsAuthModalOpen]);
 
   const clearFavorites = useCallback(async () => {
     if (!user) return;
@@ -157,9 +166,9 @@ export const MovieProvider = ({ children }) => {
     await supabase.from('favorites').delete().eq('user_id', user.id);
   }, [user]);
 
-  // Функции CRUD оставляем для обратной совместимости, если они где-то используются
   const addMovie = useCallback(() => {}, []); 
   const updateMovie = useCallback(() => {}, []);
+  
   const deleteMovie = useCallback(async (movieId) => {
     const { error } = await supabase
       .from('custom_movies')
@@ -173,9 +182,8 @@ export const MovieProvider = ({ children }) => {
     }
 
     setCustomMovies(prev => prev.filter(m => m.id !== movieId));
-    
-    // Также чистим из Избранного и Просмотренного, если он там был
-    setFavorites(prev => prev.filter(f => f.id !== movieId));
+    setFavorites(prev => prev.filter(f => String(f.id) !== String(movieId)));
+    setWatched(prev => prev.filter(w => String(w.id) !== String(movieId))); // Очищаем и из просмотренных!
     
     notify({ type: 'info', message: 'Фильм навсегда удален из базы.' });
   }, [notify]);
@@ -194,7 +202,7 @@ export const MovieProvider = ({ children }) => {
     toggleWatched,
     clearFavorites,
     fetchMovies,
-    fetchCustomMovies, // <--- Добавили вот эту строчку!
+    fetchCustomMovies,
     getMovieVideo,
     addMovie,
     deleteMovie,
