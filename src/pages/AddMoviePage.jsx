@@ -6,9 +6,12 @@ import { useAuth } from '../context/AuthContext';
 import { MovieContext } from '../context/MovieContext';
 import { supabase } from '../api/supabase';
 
+// 🔥 ОБНОВЛЕННЫЕ РУССКИЕ ЖАНРЫ (Точно как в фильтрах)
 const AVAILABLE_GENRES = [
-  "Action", "Comedy", "Drama", "Horror", "Sci-Fi", 
-  "Thriller", "Romance", "Fantasy", "Animation", "Crime"
+  "Аниме", "Биография", "Боевик", "Вестерн", "Военный", 
+  "Детектив", "Документальный", "Драма", "Комедия", "Криминал", 
+  "Мелодрама", "Музыка", "Мультфильм", "Приключения", "Семейный", 
+  "Триллер", "Ужасы", "Фантастика", "Фэнтези"
 ];
 
 const AddMoviePage = () => {
@@ -263,6 +266,7 @@ const AddMoviePage = () => {
                 title: values.title || 'Название фильма',
                 rating: values.rating || '0.0',
                 popularity: 'NEW',
+                year: new Date().getFullYear().toString(), // Добавили год для модалки
                 genres: values.genres.length > 0 ? values.genres : ['Жанр'],
                 poster: `https://via.placeholder.com/500x750/181a20/8b9bb4?text=Постер`,
               }}

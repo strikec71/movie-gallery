@@ -11,28 +11,34 @@ const useMovieCardContext = () => {
   return ctx;
 };
 
+const formatPopularity = (num) => {
+  if (!num || isNaN(num) || num === 0) return 'NEW'; 
+  
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  
+  return num;
+};
+
 const MovieCardBase = memo(({
   movie,
-  isFavorite: propIsFavorite, // Принимаем, но перепроверим сами
-  isWatched: propIsWatched,   // Принимаем, но перепроверим сами
+  isFavorite: propIsFavorite,
+  isWatched: propIsWatched,
   onToggleFavorite,
   onToggleWatched,
   onClick,
   children,
 }) => {
-  // 1. Вытягиваем глобальные данные, чтобы карточка сама знала "правду"
   const { favorites, watched, toggleFavorite, toggleWatched } = useContext(MovieContext);
 
   if (!movie) return null;
 
-  // 2. УМНАЯ ПРОВЕРКА: Ищем фильм в массиве объектов (надежная защита от старых багов)
   const isFav = propIsFavorite || (Array.isArray(favorites) && favorites.some(f => String(f?.id || f) === String(movie.id)));
   const isWtch = propIsWatched || (Array.isArray(watched) && watched.some(w => String(w?.id || w) === String(movie.id)));
 
   const finalToggleFav = onToggleFavorite || toggleFavorite;
   const finalToggleWatch = onToggleWatched || toggleWatched;
 
-  // 3. Используем useCallback, чтобы React успевал обновлять контекст
   const handleFavoriteClick = useCallback((e) => {
     e.stopPropagation();
     if (finalToggleFav) finalToggleFav(movie.id);
@@ -113,8 +119,9 @@ const Poster = ({ children }) => {
         ⭐ {Number(movie.rating || movie.vote_average || 0).toFixed(1)}
       </span>
 
-      <span className="movie-popularity">
-        🔥 {movie.popularity || 'NEW'}
+      {/* ИСПРАВЛЕНО: Теперь выводим реальное число голосов вместо NEW */}
+      <span className="movie-popularity" title="Количество голосов">
+        🔥 {formatPopularity(movie.popularity)}
       </span>
 
       {isAdmin && movie.isCustom && (
