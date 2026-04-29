@@ -8,8 +8,7 @@ export const askMovieAI = async (chatHistory, newPrompt) => {
     { role: "system", content: systemContext }
   ];
 
-  // ИСПРАВЛЕНИЕ 1: Игнорируем самое первое приветственное сообщение от бота,
-  // чтобы не злить строгую модель Llama (диалог в истории должен начинаться с user)
+  // Игнорируем самое первое приветственное сообщение от бота
   const realHistory = chatHistory.filter((msg, index) => index !== 0);
 
   // Берем последние 4 сообщения для памяти
@@ -30,7 +29,6 @@ export const askMovieAI = async (chatHistory, newPrompt) => {
         'Authorization': `Bearer ${GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        // ИСПРАВЛЕНИЕ 2: Используем самую свежую и стабильную модель
         model: "llama-3.1-8b-instant", 
         messages: messages,
         temperature: 0.7 
@@ -39,7 +37,6 @@ export const askMovieAI = async (chatHistory, newPrompt) => {
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        // Теперь мы будем видеть детальный текст ошибки, а не просто "Object"
         console.error("ОШИБКА ОТ GROQ:", JSON.stringify(errorData, null, 2));
         
         if (response.status === 400) return "🤖: Проблема с форматом. Попробуй перезагрузить страницу и спросить снова!";
