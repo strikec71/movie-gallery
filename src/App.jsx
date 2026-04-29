@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import NavBar from './components/NavBar';
 import Footer from './components/Footer';
 import './App.css';
-
+import AIChatBot from './components/AIChatBot';
 import { SpeedInsights } from "@vercel/speed-insights/react"
 
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -40,6 +40,9 @@ function App() {
         <Footer />
 
         <SpeedInsights />
+
+        <AIChatBot />
+        
       </div>
     </Router>
   );
