@@ -1,12 +1,19 @@
 import React, { useContext } from 'react';
 import { MovieContext } from '../context/MovieContext';
+import { useAuth } from '../context/AuthContext';
 import { useScreenshotProtection } from '../hooks/useScreenshotProtection';
+import withAuth from '../hoc/withAuth';
+import { Link } from 'react-router-dom'; // Импортируем Link для переходов
 
 const ProfilePage = () => {
-  const { favorites, watched, logout } = useContext(MovieContext);
-  const userEmail = "alisher_pro_dev@example.com";
+  const { favorites, watched } = useContext(MovieContext);
+  const { user, signOut, isAdmin } = useAuth();
 
   useScreenshotProtection();
+
+  const registerDate = user?.created_at 
+    ? new Date(user.created_at).toLocaleDateString('ru-RU')
+    : 'Неизвестно';
 
   return (
     <div className="page-container" style={{ animation: 'fadeInUp 0.8s var(--ease-spring)' }}>
@@ -39,9 +46,15 @@ const ProfilePage = () => {
             👤
           </div>
 
-          <h2 style={{ fontSize: '2.2rem', marginBottom: '10px', fontWeight: '800' }}>Киноман 3000</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', marginBottom: '40px' }}>
-            {userEmail}
+          <h2 style={{ fontSize: '2.2rem', marginBottom: '10px', fontWeight: '800' }}>
+            {isAdmin ? 'Администратор' : 'Киноман 3000'}
+          </h2>
+          
+          <p style={{ color: 'var(--text-main)', fontSize: '1.2rem', marginBottom: '5px' }}>
+            {user?.email}
+          </p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '40px' }}>
+            В клубе с: {registerDate}
           </p>
 
           <div style={{ 
@@ -50,16 +63,25 @@ const ProfilePage = () => {
             gap: '20px',
             marginTop: '20px'
           }}>
+            {/* Ссылка на Избранное */}
+            <Link to="/favorites" style={{ textDecoration: 'none', transition: 'transform 0.2s', display: 'block' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '20px', border: '1px solid var(--glass-border)', height: '100%' }}>
+                <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--gold)' }}>{favorites.length}</div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>В избранном</div>
+              </div>
+            </Link>
+
+            {/* Ссылка на Просмотренное */}
+            <Link to="/watched" style={{ textDecoration: 'none', transition: 'transform 0.2s', display: 'block' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '20px', border: '1px solid var(--glass-border)', height: '100%' }}>
+                <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#00e676' }}>{watched ? watched.length : 0}</div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Просмотрено</div>
+              </div>
+            </Link>
+
+            {/* Статичный блок уровня */}
             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '20px', border: '1px solid var(--glass-border)' }}>
-              <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--gold)' }}>{favorites.length}</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>В избранном</div>
-            </div>
-            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '20px', border: '1px solid var(--glass-border)' }}>
-              <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#00e676' }}>{watched ? watched.length : 0}</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Просмотрено</div>
-            </div>
-            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '20px', border: '1px solid var(--glass-border)' }}>
-              <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#ff4081' }}>PRO</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#ff4081' }}>{isAdmin ? 'GOD' : 'PRO'}</div>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Уровень</div>
             </div>
           </div>
@@ -68,9 +90,8 @@ const ProfilePage = () => {
             ⚙️ Редактировать профиль
           </button>
 
-          {/* НОВАЯ КРАСИВАЯ КНОПКА ВЫХОДА */}
           <button 
-            onClick={logout} 
+            onClick={signOut} 
             style={{ 
               marginTop: '20px', 
               width: '100%', 
@@ -122,4 +143,4 @@ const ProfilePage = () => {
   );
 };
 
-export default ProfilePage;
+export default withAuth(ProfilePage);

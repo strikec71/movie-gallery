@@ -2,15 +2,18 @@ import React, { useContext, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { MovieContext } from '../context/MovieContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import ThemeModal from './ThemeModal';
+import AuthModal from './AuthModal';
 
 const NavBar = () => {
   const { favorites } = useContext(MovieContext);
-  
   const { theme, availableThemes } = useTheme();
-  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
+  
+  const { user, isAdmin, isAuthModalOpen, setIsAuthModalOpen } = useAuth(); 
 
-  const currentIcon = availableThemes.find(t => t.id === theme)?.icon || '🌌';
+  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
+  const currentIcon = availableThemes.find(th => th.id === theme)?.icon || '🌌';
 
   return (
     <>
@@ -31,17 +34,30 @@ const NavBar = () => {
           </NavLink>
 
           <NavLink to="/favorites" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
-            <span>💖</span> Избранное 
+            <span>💖</span> Избранное
             {favorites.length > 0 && <span className="badge">{favorites.length}</span>}
           </NavLink>
 
-          <NavLink to="/add-movie" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
-            <span>➕</span> Добавить
-          </NavLink>
-
-          <NavLink to="/profile" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
-            <span>👤</span> Профиль
-          </NavLink>
+          {user ? (
+            <>
+              {isAdmin && (
+                <NavLink to="/add-movie" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+                  <span>➕</span> Добавить
+                </NavLink>
+              )}
+              <NavLink to="/profile" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+                <span>👤</span> Профиль
+              </NavLink>
+            </>
+          ) : (
+            <button 
+              onClick={() => setIsAuthModalOpen(true)} 
+              className="nav-link" 
+              style={{ background: 'var(--primary)', color: 'var(--text-on-primary)', border: 'none', cursor: 'pointer', padding: '8px 16px', borderRadius: '12px', fontWeight: 'bold' }}
+            >
+              <span>🔑</span> Войти
+            </button>
+          )}
 
           <button 
             onClick={() => setIsThemeModalOpen(true)}
@@ -60,6 +76,7 @@ const NavBar = () => {
       </nav>
 
       <ThemeModal isOpen={isThemeModalOpen} onClose={() => setIsThemeModalOpen(false)} />
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </>
   );
 };

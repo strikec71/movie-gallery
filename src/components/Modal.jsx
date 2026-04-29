@@ -7,11 +7,12 @@ const Modal = ({ movie, onClose }) => {
   const [trailerKey, setTrailerKey] = useState(null);
   const navigate = useNavigate();
   
-  const isFavorite = favorites?.some(f => f.id === movie?.id);
-  const isWatched = watched?.includes(movie?.id);
-  const isCustomMovie = customMovies?.some(m => m.id === movie?.id);
+  // ИСПРАВЛЕНО ЗДЕСЬ: Умная проверка для избранного и просмотренного
+  const isFavorite = Array.isArray(favorites) && favorites.some(f => String(f?.id || f) === String(movie?.id));
+  const isWatched = Array.isArray(watched) && watched.some(w => String(w?.id || w) === String(movie?.id));
+  
+  const isCustomMovie = customMovies?.some(m => String(m.id) === String(movie?.id));
 
-  // Fetch trailer only for TMDB movies; custom movies have no remote videos.
   useEffect(() => {
     let isMounted = true;
     const fetchVideo = async () => {
@@ -26,7 +27,6 @@ const Modal = ({ movie, onClose }) => {
 
   if (!movie) return null;
 
-  // Confirm destructive action before removing user-created movies.
   const handleDelete = async () => {
     if (window.confirm("Удалить этот фильм из вашей коллекции?")) {
       await deleteMovie(movie.id);
@@ -34,7 +34,6 @@ const Modal = ({ movie, onClose }) => {
     }
   };
 
-  // Close modal first to avoid stacked overlays during navigation.
   const handleEdit = () => {
     onClose();
     navigate(`/add-movie?edit=${movie.id}`);
@@ -56,6 +55,12 @@ const Modal = ({ movie, onClose }) => {
             </h2>
             {movie.originalTitle && <p className="modal-original-title">{movie.originalTitle}</p>}
             
+            {movie.slogan && (
+              <p className="modal-slogan" style={{ fontStyle: 'italic', opacity: 0.8, margin: '5px 0' }}>
+                {movie.slogan}
+              </p>
+            )}
+            
             <div className="modal-genres">
               {movie.genres?.map(g => <span key={g} className="genre-tag-modal">{g}</span>)}
             </div>
@@ -65,21 +70,42 @@ const Modal = ({ movie, onClose }) => {
         <div className="modal-body">
           <div className="modal-stats">
             <div className="stat-item">
-              <span className="stat-label">Рейтинг</span>
+              <span className="stat-label">Кинопоиск</span>
               <span className="stat-value star">⭐ {movie.rating}</span>
             </div>
+            
+            {movie.ratingImdb && (
+              <div className="stat-item">
+                <span className="stat-label">IMDb</span>
+                <span className="stat-value star" style={{ color: '#f5c518' }}>⭐ {movie.ratingImdb}</span>
+              </div>
+            )}
+            
             <div className="stat-item">
-              <span className="stat-label">Популярность</span>
-              <span className="stat-value fire">🔥 {movie.popularity}</span>
+              <span className="stat-label">Страна</span>
+              <span className="stat-value lang">{movie.country}</span>
             </div>
-            <div className="stat-item">
-              <span className="stat-label">Язык</span>
-              <span className="stat-value lang">{movie.language?.toUpperCase() || 'RU'}</span>
-            </div>
+            
             <div className="stat-item">
               <span className="stat-label">Год</span>
               <span className="stat-value">{movie.year}</span>
             </div>
+
+            {movie.filmLength && (
+              <div className="stat-item">
+                <span className="stat-label">Время</span>
+                <span className="stat-value">⏱️ {movie.filmLength}</span>
+              </div>
+            )}
+
+            {movie.ageLimit && (
+              <div className="stat-item">
+                <span className="stat-label">Возраст</span>
+                <span className="stat-value" style={{ border: '1px solid currentColor', padding: '2px 6px', borderRadius: '4px', fontSize: '0.85em' }}>
+                  {movie.ageLimit}
+                </span>
+              </div>
+            )}
           </div>
 
           <p className="modal-description">{movie.description}</p>
@@ -101,43 +127,45 @@ const Modal = ({ movie, onClose }) => {
 
           <div className="modal-actions">
             {!isCustomMovie && (
-              <a 
-                href={`https://www.kinopoisk.ru/index.php?kp_query=${encodeURIComponent(movie.title)}`} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="modal-btn btn-kp"
-              >
-                🍿 Кинопоиск
-              </a>
+              <>
+                <a 
+                  href={`https://sspoisk.ru/film/${movie.id}/`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="modal-btn"
+                  style={{ background: '#e50914', color: '#fff', border: 'none' }}
+                >
+                  ▶️ Смотреть онлайн
+                </a>
+                
+                <a 
+                  href={movie.webUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="modal-btn btn-kp"
+                >
+                  🍿 Отзывы на КП
+                </a>
+              </>
             )}
-            
+
             {isCustomMovie && (
-              <button 
-                className="modal-btn" 
-                style={{ background: 'var(--gold)', color: '#000', border: 'none' }}
-                onClick={handleEdit}
-              >
+              <button className="modal-btn" style={{ background: 'var(--gold)', color: '#000', border: 'none' }} onClick={handleEdit}>
                 🖊️ Редактировать
               </button>
             )}
-
-            <button 
-              className={`modal-btn btn-fav ${isFavorite ? 'active' : ''}`} 
-              onClick={() => toggleFavorite(movie.id)}
-            >
+            
+            <button className={`modal-btn btn-fav ${isFavorite ? 'active' : ''}`} onClick={() => toggleFavorite(movie.id)}>
               {isFavorite ? '💔 Из избранного' : '❤️ В избранное'}
             </button>
 
-            <button 
-              className={`modal-btn btn-watch ${isWatched ? 'active' : ''}`}
-              onClick={() => toggleWatched(movie.id)}
-            >
+            <button className={`modal-btn btn-watch ${isWatched ? 'active' : ''}`} onClick={() => toggleWatched(movie.id)}>
               {isWatched ? '🔄 Отменить просмотр' : '👀 Просмотрено'}
             </button>
 
             {isCustomMovie && (
               <button className="modal-btn btn-delete" onClick={handleDelete}>
-                🗑️ Удалить фильм
+                🗑️ Удалить
               </button>
             )}
           </div>

@@ -1,28 +1,35 @@
-import React, { useContext, useCallback, useEffect, useRef } from 'react';
-import { MovieContext } from '../context/MovieContext';
+import React, { useCallback, useEffect, useRef, useState, useContext } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import MovieCard from '../components/MovieCard';
 import { useForm } from '../hooks/useForm';
-import withAuth from '../hoc/withAuth';
+import { useAuth } from '../context/AuthContext';
+import { MovieContext } from '../context/MovieContext';
+import { supabase } from '../api/supabase';
 
+// 🔥 ОБНОВЛЕННЫЕ РУССКИЕ ЖАНРЫ (Точно как в фильтрах)
 const AVAILABLE_GENRES = [
-  "Action", "Comedy", "Drama", "Horror", "Sci-Fi", 
-  "Thriller", "Romance", "Fantasy", "Animation", "Crime"
+  "Аниме", "Биография", "Боевик", "Вестерн", "Военный", 
+  "Детектив", "Документальный", "Драма", "Комедия", "Криминал", 
+  "Мелодрама", "Музыка", "Мультфильм", "Приключения", "Семейный", 
+  "Триллер", "Ужасы", "Фантастика", "Фэнтези"
 ];
 
 const AddMoviePage = () => {
-  const { addMovie, updateMovie, customMovies } = useContext(MovieContext);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user, isAdmin, loading: authLoading } = useAuth();
+  
+  const { fetchCustomMovies } = useContext(MovieContext);
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const editId = searchParams.get('edit');
   const isEditMode = !!editId;
 
-  // Uncontrolled refs are used for fields that do not need live validation.
   const posterUrlRef = useRef(null);
   const descriptionRef = useRef(null);
 
-  // Validation is shared with useForm so rules stay in one place.
   const validateField = useCallback((name, value) => {
     let errorMsg = '';
     switch (name) {
@@ -50,27 +57,35 @@ const AddMoviePage = () => {
     isWatched: false
   }, validateField);
 
-  // When editing, hydrate both controlled form values and uncontrolled refs.
   useEffect(() => {
-    if (isEditMode && customMovies.length > 0) {
-      const movieToEdit = customMovies.find(m => m.id === Number(editId));
-      if (movieToEdit) {
-        setValues({
-          title: movieToEdit.title,
-          rating: movieToEdit.rating.toString(),
-          genres: movieToEdit.genres,
-          isWatched: false
-        });
+    const fetchMovieToEdit = async () => {
+      if (isEditMode) {
+        const { data: movieToEdit, error } = await supabase
+          .from('custom_movies')
+          .select('*')
+          .eq('id', editId)
+          .single();
 
-        if (posterUrlRef.current) {
-          posterUrlRef.current.value = movieToEdit.poster.startsWith('http') ? movieToEdit.poster : '';
-        }
-        if (descriptionRef.current) {
-          descriptionRef.current.value = movieToEdit.description || '';
+        if (movieToEdit && !error) {
+          setValues({
+            title: movieToEdit.title,
+            rating: movieToEdit.vote_average.toString(),
+            genres: movieToEdit.genres || [],
+            isWatched: false
+          });
+
+          if (posterUrlRef.current) {
+            posterUrlRef.current.value = movieToEdit.poster_path || '';
+          }
+          if (descriptionRef.current) {
+            descriptionRef.current.value = movieToEdit.description || '';
+          }
         }
       }
-    }
-  }, [editId, isEditMode, customMovies, setValues]);
+    };
+    
+    fetchMovieToEdit();
+  }, [editId, isEditMode, setValues]);
 
   const toggleGenre = useCallback((genre) => {
     const newGenres = values.genres.includes(genre)
@@ -83,8 +98,8 @@ const AddMoviePage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage('');
     
-    // Validate all required fields before creating/updating the movie.
     const titleError = validateField('title', values.title);
     const ratingError = validateField('rating', values.rating);
     const genresError = validateField('genres', values.genres);
@@ -92,38 +107,64 @@ const AddMoviePage = () => {
     setTouched({ title: true, rating: true, genres: true });
     if (titleError || ratingError || genresError) return;
 
-    // Read uncontrolled values directly from refs at submit time.
-    const posterValue = posterUrlRef.current?.value || '';
-    const descriptionValue = descriptionRef.current?.value || '';
+    setIsSubmitting(true);
 
-    const movieData = {
-      id: isEditMode ? Number(editId) : Date.now(),
-      title: values.title.trim(),
-      rating: parseFloat(values.rating).toFixed(1),
-      popularity: isEditMode 
-        ? (customMovies.find(m => m.id === Number(editId))?.popularity || 100) 
-        : Math.floor(Math.random() * 500) + 100,
-      year: isEditMode 
-        ? (customMovies.find(m => m.id === Number(editId))?.year || new Date().getFullYear().toString())
-        : new Date().getFullYear().toString(),
-      genres: values.genres,
-      description: descriptionValue.trim(),
-      poster: posterValue || `https://via.placeholder.com/500x750/181a20/ff0055?text=${encodeURIComponent(values.title)}`,
-    };
-
-    // Keep one submit flow for both create and edit modes.
     try {
+      const posterValue = posterUrlRef.current?.value || '';
+      const descriptionValue = descriptionRef.current?.value || '';
+
+      const moviePayload = {
+        title: values.title.trim(),
+        vote_average: parseFloat(values.rating).toFixed(1),
+        release_date: new Date().getFullYear().toString(),
+        genres: values.genres,
+        description: descriptionValue.trim(),
+        poster_path: posterValue || `https://via.placeholder.com/500x750/181a20/ff0055?text=${encodeURIComponent(values.title)}`,
+        user_id: user.id
+      };
+
       if (isEditMode) {
-        await updateMovie(movieData);
+        const { error } = await supabase
+          .from('custom_movies')
+          .update(moviePayload)
+          .eq('id', editId);
+          
+        if (error) throw error;
       } else {
-        await addMovie(movieData, values.isWatched);
+        const { error } = await supabase
+          .from('custom_movies')
+          .insert([moviePayload]);
+
+        if (error) throw error;
       }
+
+      await fetchCustomMovies();
+
       navigate('/movies');
     } catch (error) {
       console.error('Save failed:', error);
+      setErrorMessage(error.message || 'Ошибка при сохранении фильма');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  if (authLoading) return <div className="page-container"><h2 style={{ textAlign: 'center' }}>Проверка доступа...</h2></div>;
+
+  if (!user || !isAdmin) {
+    return (
+      <div className="page-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <div style={{ textAlign: 'center', background: 'var(--bg-card)', padding: '50px', borderRadius: '24px', border: '1px solid var(--glass-border)' }}>
+          <h1 style={{ fontSize: '5rem', margin: '0 0 20px' }}>🔒</h1>
+          <h2>Доступ закрыт</h2>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '30px' }}>У вас нет прав Администратора для добавления фильмов.</p>
+          <button onClick={() => navigate('/')} className="btn-primary" style={{ padding: '12px 30px', borderRadius: '12px' }}>На главную</button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- ОСНОВНОЙ РЕНДЕР ФОРМЫ ---
   return (
     <div className="page-container" style={{ animation: 'fadeInUp 0.8s var(--ease-spring)' }}>
       <div className="form-wrapper" style={{ 
@@ -139,6 +180,12 @@ const AddMoviePage = () => {
           <h2 style={{ marginTop: 0, marginBottom: '30px', borderBottom: '2px solid var(--primary)', display: 'inline-block', paddingBottom: '10px' }}>
             {isEditMode ? 'Редактировать фильм' : 'Новый фильм'}
           </h2>
+
+          {errorMessage && (
+            <div style={{ background: 'rgba(255,0,0,0.1)', color: '#ff3b3b', padding: '15px', borderRadius: '12px', marginBottom: '20px' }}>
+              {errorMessage}
+            </div>
+          )}
           
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
@@ -184,7 +231,7 @@ const AddMoviePage = () => {
                         padding: '8px 16px', borderRadius: '50px', cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'var(--font-main)',
                         border: `1px solid ${isSelected ? 'var(--primary)' : 'var(--glass-border)'}`,
                         background: isSelected ? 'var(--primary)' : 'transparent',
-                        color: isSelected ? 'white' : 'var(--text-muted)',
+                        color: isSelected ? 'var(--text-on-primary)' : 'var(--text-muted)',
                         fontWeight: isSelected ? 'bold' : 'normal',
                       }}
                     >
@@ -200,12 +247,12 @@ const AddMoviePage = () => {
               <textarea 
                 name="description" ref={descriptionRef}
                 className="search-input"
-                style={{ minHeight: '100px', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', padding: '12px' }} 
+                style={{ minHeight: '100px', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', padding: '12px', width: '100%', resize: 'vertical' }} 
               />
             </div>
 
-            <button type="submit" className="btn-primary glow-effect" style={{ border: 'none', cursor: 'pointer', width: '100%' }}>
-              {isEditMode ? 'Сохранить изменения' : 'Добавить фильм'}
+            <button type="submit" className="btn-primary glow-effect" disabled={isSubmitting} style={{ border: 'none', cursor: isSubmitting ? 'not-allowed' : 'pointer', width: '100%', padding: '15px', borderRadius: '12px', opacity: isSubmitting ? 0.7 : 1 }}>
+              {isSubmitting ? 'Сохранение...' : (isEditMode ? 'Сохранить изменения' : 'Опубликовать в БД')}
             </button>
           </form>
         </div>
@@ -214,12 +261,12 @@ const AddMoviePage = () => {
           <h3 style={{ color: 'var(--text-muted)', marginBottom: '30px' }}>Предпросмотр</h3>
           <div style={{ width: '280px', pointerEvents: 'none' }}>
             
-            {/* Preview mirrors current form state without persisting anything. */}
             <MovieCard 
               movie={{
                 title: values.title || 'Название фильма',
                 rating: values.rating || '0.0',
                 popularity: 'NEW',
+                year: new Date().getFullYear().toString(), // Добавили год для модалки
                 genres: values.genres.length > 0 ? values.genres : ['Жанр'],
                 poster: `https://via.placeholder.com/500x750/181a20/8b9bb4?text=Постер`,
               }}
@@ -237,4 +284,4 @@ const AddMoviePage = () => {
   );
 };
 
-export default withAuth(AddMoviePage);
+export default AddMoviePage;
