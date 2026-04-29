@@ -5,6 +5,9 @@ import MovieCard from '../components/MovieCard';
 import FilterBar from '../components/FilterBar';
 import { useModal } from '../hooks/useModal';
 
+// Импортируем нашего ИИ-помощника
+import AiAssistant from '../components/AiAssistant';
+
 // Lazy-load modal to keep initial page bundle smaller.
 const Modal = lazy(() => import('../components/Modal'));
 
@@ -155,6 +158,10 @@ const MoviesPage = () => {
           <Modal movie={modalData} onClose={close} />
         </Suspense>
       )}
+
+      {/* Выводим ИИ-ассистента поверх страницы */}
+      <AiAssistant />
+
     </div>
   );
 };
