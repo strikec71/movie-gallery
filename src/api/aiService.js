@@ -1,43 +1,58 @@
-const API_KEY = "AIzaSyD2xulkKgxZXmob1M-Flz-DxA3uD4Qcxj8";
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY; 
+const API_URL = "https://api.groq.com/openai/v1/chat/completions"; 
 
-// Используем 2.0-flash как самую стабильную
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
-
-export const askMovieAI = async (userPrompt) => {
-  const systemContext = "Ты — эксперт по кино. Отвечай кратко, вежливо и на русском. Посоветуй 3 фильма.";
+export const askMovieAI = async (chatHistory, newPrompt) => {
+  const systemContext = "Ты — продвинутый эксперт по кино. Отвечай кратко, вежливо и строго на русском языке. Выделяй названия фильмов **жирным шрифтом**. Советуй по 2-3 фильма.";
   
-  const payload = {
-    contents: [{ parts: [{ text: `${systemContext}\n\nПользователь: ${userPrompt}` }] }]
-  };
+  const messages = [
+    { role: "system", content: systemContext }
+  ];
+
+  // ИСПРАВЛЕНИЕ 1: Игнорируем самое первое приветственное сообщение от бота,
+  // чтобы не злить строгую модель Llama (диалог в истории должен начинаться с user)
+  const realHistory = chatHistory.filter((msg, index) => index !== 0);
+
+  // Берем последние 4 сообщения для памяти
+  realHistory.slice(-4).forEach(msg => {
+    messages.push({
+      role: msg.role === 'user' ? "user" : "assistant",
+      content: msg.text
+    });
+  });
+
+  messages.push({ role: "user", content: newPrompt });
 
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        // ИСПРАВЛЕНИЕ 2: Используем самую свежую и стабильную модель
+        model: "llama-3.1-8b-instant", 
+        messages: messages,
+        temperature: 0.7 
+      })
     });
 
     if (!response.ok) {
-        // ОБРАБОТКА ЛИМИТОВ (429)
-        if (response.status === 429) {
-            return "🤖: Я очень популярен! Слишком много запросов. Подождите 1 минуту и я снова буду готов советовать фильмы.";
-        }
-        
-        // ОБРАБОТКА ПЕРЕГРУЗКИ (503)
-        if (response.status === 503) {
-            return "🤖: Серверы Google сейчас перегружены. Попробуйте нажать кнопку еще раз через 10 секунд.";
-        }
-
         const errorData = await response.json().catch(() => ({}));
-        console.error("ОШИБКА ОТ GOOGLE:", errorData);
+        // Теперь мы будем видеть детальный текст ошибки, а не просто "Object"
+        console.error("ОШИБКА ОТ GROQ:", JSON.stringify(errorData, null, 2));
+        
+        if (response.status === 400) return "🤖: Проблема с форматом. Попробуй перезагрузить страницу и спросить снова!";
+        if (response.status === 401) return "🤖: Ошибка ключа. Проверьте файл .env!";
+        
         throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
+    return data.choices[0].message.content;
 
   } catch (error) {
     console.error("AI Error:", error);
-    return "Ой, что-то пошло не так. Проверьте интернет или подождите немного! 🍿";
+    return "Ой, связь с ИИ прервалась. Проверьте интернет или консоль! 🍿";
   }
 };

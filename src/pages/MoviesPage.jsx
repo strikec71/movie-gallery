@@ -5,6 +5,9 @@ import MovieCard from '../components/MovieCard';
 import FilterBar from '../components/FilterBar';
 import { useModal } from '../hooks/useModal';
 
+// ВОТ ЭТА СТРОЧКА БЫЛА ПОТЕРЯНА:
+import AiAssistant from '../components/AiAssistant';
+
 const Modal = lazy(() => import('../components/Modal'));
 
 const MoviesPage = () => {
@@ -75,7 +78,7 @@ const MoviesPage = () => {
         <MovieListWrapper 
           movies={movies} 
           render={(movie) => {
-            // ИСПРАВЛЕНО ТУТ:
+            // Сохраняем логику сравнения ID как строк (важно для Supabase)
             const isFavorite = favorites?.some(f => String(f.id) === String(movie.id));
             const isWatched = watched?.some(w => String(w.id) === String(movie.id));
 
@@ -152,7 +155,7 @@ const MoviesPage = () => {
         </Suspense>
       )}
 
-      {/* Выводим ИИ-ассистента поверх страницы */}
+      {/* Теперь компонент будет отображаться корректно */}
       <AiAssistant />
 
     </div>
