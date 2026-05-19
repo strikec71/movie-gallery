@@ -3,7 +3,7 @@ import { MovieContext } from '../context/MovieContext';
 import { useAuth } from '../context/AuthContext';
 import { useScreenshotProtection } from '../hooks/useScreenshotProtection';
 import withAuth from '../hoc/withAuth';
-import { Link } from 'react-router-dom'; // Импортируем Link для переходов
+import { Link } from 'react-router-dom';
 
 const ProfilePage = () => {
   const { favorites, watched } = useContext(MovieContext);
@@ -63,7 +63,6 @@ const ProfilePage = () => {
             gap: '20px',
             marginTop: '20px'
           }}>
-            {/* Ссылка на Избранное */}
             <Link to="/favorites" style={{ textDecoration: 'none', transition: 'transform 0.2s', display: 'block' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}>
               <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '20px', border: '1px solid var(--glass-border)', height: '100%' }}>
                 <div style={{ fontSize: '2.5rem', fontWeight: '800', color: 'var(--gold)' }}>{favorites.length}</div>
@@ -71,7 +70,6 @@ const ProfilePage = () => {
               </div>
             </Link>
 
-            {/* Ссылка на Просмотренное */}
             <Link to="/watched" style={{ textDecoration: 'none', transition: 'transform 0.2s', display: 'block' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}>
               <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '20px', border: '1px solid var(--glass-border)', height: '100%' }}>
                 <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#00e676' }}>{watched ? watched.length : 0}</div>
@@ -79,7 +77,6 @@ const ProfilePage = () => {
               </div>
             </Link>
 
-            {/* Статичный блок уровня */}
             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '20px', border: '1px solid var(--glass-border)' }}>
               <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#ff4081' }}>{isAdmin ? 'GOD' : 'PRO'}</div>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Уровень</div>

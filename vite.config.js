@@ -7,6 +7,7 @@ export default defineConfig({
   // ДОБАВЛЯЕМ БЛОК ТЕСТОВ:
   test: {
     environment: 'jsdom',
-    globals: true, // Позволяет использовать expect и describe без импортов
-  }
+    globals: true,
+    setupFiles: ['./tests/setup.js'],
+  },
 })

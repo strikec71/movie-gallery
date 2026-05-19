@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Env with secrets (оставляем только .env.example в репозитории)
+.env
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

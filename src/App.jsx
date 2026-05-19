@@ -8,7 +8,6 @@ import { SpeedInsights } from "@vercel/speed-insights/react"
 const HomePage = lazy(() => import('./pages/HomePage'));
 const MoviesPage = lazy(() => import('./pages/MoviesPage'));
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
-// 1. ИМПОРТИРУЕМ НОВУЮ СТРАНИЦУ
 const WatchedPage = lazy(() => import('./pages/WatchedPage')); 
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));

@@ -5,14 +5,7 @@ import { useForm } from '../hooks/useForm';
 import { useAuth } from '../context/AuthContext';
 import { MovieContext } from '../context/MovieContext';
 import { supabase } from '../api/supabase';
-
-// 🔥 ОБНОВЛЕННЫЕ РУССКИЕ ЖАНРЫ (Точно как в фильтрах)
-const AVAILABLE_GENRES = [
-  "Аниме", "Биография", "Боевик", "Вестерн", "Военный", 
-  "Детектив", "Документальный", "Драма", "Комедия", "Криминал", 
-  "Мелодрама", "Музыка", "Мультфильм", "Приключения", "Семейный", 
-  "Триллер", "Ужасы", "Фантастика", "Фэнтези"
-];
+import { MOVIE_GENRE_LABELS } from '../constants/movieGenres';
 
 const AddMoviePage = () => {
   const navigate = useNavigate();
@@ -222,7 +215,7 @@ const AddMoviePage = () => {
             <div>
               <label style={{ display: 'block', marginBottom: '12px', color: 'var(--text-muted)' }}>Жанры *</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {AVAILABLE_GENRES.map(genre => {
+                {MOVIE_GENRE_LABELS.map((genre) => {
                   const isSelected = values.genres.includes(genre);
                   return (
                     <button
@@ -266,7 +259,7 @@ const AddMoviePage = () => {
                 title: values.title || 'Название фильма',
                 rating: values.rating || '0.0',
                 popularity: 'NEW',
-                year: new Date().getFullYear().toString(), // Добавили год для модалки
+                year: new Date().getFullYear().toString(),
                 genres: values.genres.length > 0 ? values.genres : ['Жанр'],
                 poster: `https://via.placeholder.com/500x750/181a20/8b9bb4?text=Постер`,
               }}

@@ -5,22 +5,22 @@ import MovieCard from '../components/MovieCard';
 import FilterBar from '../components/FilterBar';
 import { useModal } from '../hooks/useModal';
 
-// ВОТ ЭТА СТРОЧКА БЫЛА ПОТЕРЯНА:
 import AiAssistant from '../components/AiAssistant';
 
 const Modal = lazy(() => import('../components/Modal'));
 
 const MoviesPage = () => {
-  const { 
-    movies, 
-    isLoading, 
-    page, 
-    setPage, 
-    totalPages, 
-    favorites, 
+  const {
+    movies,
+    isLoading,
+    moviesFetchError,
+    page,
+    setPage,
+    totalPages,
+    favorites,
     toggleFavorite,
     watched,
-    toggleWatched
+    toggleWatched,
   } = useContext(MovieContext);
   
   const { isOpen, modalData, open, close } = useModal(); 
@@ -115,6 +115,12 @@ const MoviesPage = () => {
           }} 
         />
 
+      ) : moviesFetchError ? (
+        <div className="no-results">
+          <div style={{ fontSize: '4rem', marginBottom: '20px' }}>⚠️</div>
+          <h3>Не удалось загрузить каталог</h3>
+          <p style={{ color: 'var(--text-muted)' }}>{moviesFetchError}</p>
+        </div>
       ) : (
         <div className="no-results">
           <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🕵️‍♂️</div>

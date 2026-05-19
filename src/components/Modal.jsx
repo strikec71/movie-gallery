@@ -1,17 +1,19 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { MovieContext } from '../context/MovieContext';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const Modal = ({ movie, onClose }) => {
   const { getMovieVideo, toggleFavorite, favorites, watched, toggleWatched, customMovies, deleteMovie } = useContext(MovieContext);
+  const { isAdmin } = useAuth();
   const [trailerKey, setTrailerKey] = useState(null);
   const navigate = useNavigate();
   
-  // ИСПРАВЛЕНО ЗДЕСЬ: Умная проверка для избранного и просмотренного
   const isFavorite = Array.isArray(favorites) && favorites.some(f => String(f?.id || f) === String(movie?.id));
   const isWatched = Array.isArray(watched) && watched.some(w => String(w?.id || w) === String(movie?.id));
   
   const isCustomMovie = customMovies?.some(m => String(m.id) === String(movie?.id));
+  const canManageCustomMovie = isAdmin && isCustomMovie;
 
   useEffect(() => {
     let isMounted = true;
@@ -149,7 +151,7 @@ const Modal = ({ movie, onClose }) => {
               </>
             )}
 
-            {isCustomMovie && (
+            {canManageCustomMovie && (
               <button className="modal-btn" style={{ background: 'var(--gold)', color: '#000', border: 'none' }} onClick={handleEdit}>
                 🖊️ Редактировать
               </button>
@@ -163,7 +165,7 @@ const Modal = ({ movie, onClose }) => {
               {isWatched ? '🔄 Отменить просмотр' : '👀 Просмотрено'}
             </button>
 
-            {isCustomMovie && (
+            {canManageCustomMovie && (
               <button className="modal-btn btn-delete" onClick={handleDelete}>
                 🗑️ Удалить
               </button>

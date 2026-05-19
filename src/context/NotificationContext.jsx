@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
-const NotificationContext = createContext(null);
+export const NotificationContext = createContext(null);
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);

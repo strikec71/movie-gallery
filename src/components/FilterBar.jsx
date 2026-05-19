@@ -1,14 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { MovieContext } from '../context/MovieContext';
 import RouletteModal from './RouletteModal';
-
-// 🔥 ПОЛНОСТЬЮ РУССКИЕ ЖАНРЫ
-const GENRES = [
-  "Аниме", "Биография", "Боевик", "Вестерн", "Военный", 
-  "Детектив", "Документальный", "Драма", "Комедия", "Криминал", 
-  "Мелодрама", "Музыка", "Мультфильм", "Приключения", "Семейный", 
-  "Триллер", "Ужасы", "Фантастика", "Фэнтези"
-];
+import { MOVIE_GENRE_LABELS } from '../constants/movieGenres';
 
 const FilterBar = () => {
   const { 
@@ -73,7 +66,7 @@ const FilterBar = () => {
       </div>
 
       <div className="genre-tags">
-        {GENRES.map(genre => (
+        {MOVIE_GENRE_LABELS.map((genre) => (
           <button 
             key={genre} 
             className={`genre-tag ${selectedGenres.includes(genre) ? 'active' : ''}`} 
